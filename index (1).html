@@ -1,0 +1,1129 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="持股">
+<meta name="theme-color" content="#0E1116">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>我的持股</title>
+<style>
+  :root{
+    --bg:#0E1116; --panel:#161A21; --panel2:#1D232C; --line:#262D38;
+    --text:#E7EAEE; --dim:#8A94A6; --faint:#5A6474;
+    --gold:#E0B66B; --gold-soft:rgba(224,182,107,.14);
+    --up:#F6465D;   /* 漲/獲利 = 紅 (台股慣例) */
+    --down:#21C77A; /* 跌/虧損 = 綠 */
+    --r:18px;
+    --tab:64px;
+    --top:56px;
+    --num:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+  html,body{margin:0;height:100%;overflow:hidden;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Noto Sans TC",sans-serif;
+    font-size:15px; line-height:1.4;
+    -webkit-font-smoothing:antialiased;
+    touch-action:manipulation;
+    user-select:none; -webkit-user-select:none;
+    overscroll-behavior:none;
+  }
+  /* ---- App shell ---- */
+  #app{
+    position:fixed; inset:0;
+    display:flex; flex-direction:column;
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  header{
+    height:var(--top); flex:0 0 auto;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 18px;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#11151b,#0E1116);
+  }
+  header .ttl{font-size:19px;font-weight:700;letter-spacing:.5px;}
+  header .gear{
+    width:36px;height:36px;border-radius:50%;display:grid;place-items:center;
+    background:var(--panel); color:var(--dim); font-size:17px;
+  }
+  header .gear:active{background:var(--panel2);}
+  main{
+    flex:1 1 auto; overflow-y:auto; overflow-x:hidden;
+    -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+    padding:16px 16px calc(var(--tab) + 24px);
+  }
+  /* ---- Tab bar ---- */
+  nav{
+    flex:0 0 auto; height:var(--tab);
+    display:flex; align-items:stretch;
+    background:rgba(18,22,28,.96);
+    backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+    border-top:1px solid var(--line);
+  }
+  nav button{
+    flex:1; background:none;border:0; color:var(--faint);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    font-size:10.5px; font-family:inherit; letter-spacing:.4px;
+  }
+  nav button .ic{font-size:20px;line-height:1;}
+  nav button.on{color:var(--gold);}
+  nav .addbtn .ic{
+    width:46px;height:46px;margin-top:-14px;border-radius:50%;
+    background:linear-gradient(160deg,var(--gold),#caa055);
+    color:#1a140a; display:grid;place-items:center;font-size:26px;font-weight:600;
+    box-shadow:0 6px 18px rgba(224,182,107,.34);
+  }
+  nav .addbtn{color:var(--gold);}
+
+  /* ---- Cards / rows ---- */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px;}
+  .eyebrow{font-size:11px;letter-spacing:1.6px;color:var(--dim);text-transform:uppercase;font-weight:600;}
+  .sec-h{display:flex;align-items:baseline;justify-content:space-between;margin:22px 4px 10px;}
+  .sec-h .t{font-size:13px;font-weight:700;color:var(--dim);letter-spacing:1px;}
+  .sec-h .s{font-size:12px;color:var(--faint);font-family:var(--num);}
+
+  .num{font-family:var(--num);font-variant-numeric:tabular-nums;}
+  .up{color:var(--up);} .down{color:var(--down);}
+  .pill{font-size:11px;padding:2px 8px;border-radius:999px;font-family:var(--num);font-weight:600;}
+  .pill.up{background:rgba(246,70,93,.13);} .pill.down{background:rgba(33,199,122,.13);}
+
+  /* AUM hero */
+  .hero{
+    background:radial-gradient(120% 140% at 0% 0%,#1c1d18 0%,#15181e 42%,#12151b 100%);
+    border:1px solid #2c2a20; position:relative; overflow:hidden;
+  }
+  .hero:before{content:"";position:absolute;right:-40px;top:-50px;width:180px;height:180px;border-radius:50%;
+    background:radial-gradient(circle,var(--gold-soft),transparent 70%);}
+  .hero .lbl{color:var(--gold);font-size:11px;letter-spacing:2px;font-weight:700;}
+  .hero .big{font-size:40px;font-weight:700;letter-spacing:-.5px;margin:6px 0 2px;}
+  .hero .big small{font-size:18px;color:var(--dim);font-weight:600;margin-left:4px;}
+  .hero .sub{color:var(--dim);font-size:12.5px;}
+  .hero .delta{margin-top:10px;display:inline-flex;align-items:center;gap:6px;font-size:13px;}
+
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .split .b{background:var(--panel2);border-radius:14px;padding:13px 14px;}
+  .split .b .k{font-size:11.5px;color:var(--dim);letter-spacing:.5px;}
+  .split .b .v{font-size:20px;font-weight:700;margin-top:4px;}
+  .split .b .p{font-size:11px;color:var(--faint);margin-top:2px;}
+
+  /* holdings */
+  .grp{background:var(--panel);border:1px solid var(--line);border-radius:16px;margin-bottom:11px;overflow:hidden;}
+  .grp .top{display:flex;align-items:center;gap:12px;padding:14px 15px;}
+  .grp .top:active{background:var(--panel2);}
+  .grp .nm{flex:1;min-width:0;}
+  .grp .nm .n{font-weight:650;font-size:15.5px;}
+  .grp .nm .m{font-size:11.5px;color:var(--faint);margin-top:2px;}
+  .grp .rt{text-align:right;}
+  .grp .rt .mv{font-weight:650;font-size:15px;}
+  .grp .rt .pl{font-size:12px;margin-top:2px;}
+  .chev{color:var(--faint);font-size:13px;transition:transform .2s;width:14px;text-align:center;}
+  .grp.open .chev{transform:rotate(90deg);}
+  .grp .body{display:none;border-top:1px solid var(--line);padding:4px 15px 12px;background:#13171d;}
+  .grp.open .body{display:block;}
+  .ret-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--line);}
+  .ret-row:last-child{border-bottom:0;}
+  .ret-row .l{font-size:12.5px;color:var(--dim);}
+  .ret-row .l b{color:var(--text);font-weight:600;}
+  .ret-row .r{display:flex;align-items:center;gap:12px;}
+  .ret-row .big-ret{font-size:16px;font-weight:700;font-family:var(--num);}
+  .lot{padding:10px 0;border-bottom:1px dashed var(--line);}
+  .lot:last-child{border-bottom:0;}
+  .lot .l1{display:flex;justify-content:space-between;font-size:13px;}
+  .lot .l2{display:flex;justify-content:space-between;font-size:11.5px;color:var(--faint);margin-top:3px;}
+  .acts{display:flex;gap:8px;margin-top:10px;}
+  .acts button{flex:1;background:var(--panel2);border:1px solid var(--line);color:var(--dim);
+    border-radius:10px;padding:8px;font-size:12.5px;font-family:inherit;}
+  .acts button:active{background:#222934;}
+  .acts button.del{color:var(--down);}
+  .acts button.sell{color:var(--gold);border-color:#3a3320;}
+
+  /* allocation */
+  .alloc-row{display:flex;align-items:center;gap:12px;padding:11px 2px;}
+  .alloc-row .dot{width:10px;height:10px;border-radius:3px;flex:0 0 auto;}
+  .alloc-row .nm{flex:1;font-size:14px;}
+  .alloc-row .pc{font-family:var(--num);font-weight:700;font-size:14px;}
+  .alloc-row .va{font-family:var(--num);font-size:11.5px;color:var(--faint);width:78px;text-align:right;}
+  .bar{height:5px;border-radius:3px;background:var(--panel2);margin-top:7px;overflow:hidden;}
+  .bar>i{display:block;height:100%;border-radius:3px;}
+
+  /* realized */
+  .rl-row{display:flex;justify-content:space-between;align-items:center;padding:13px 2px;border-bottom:1px solid var(--line);}
+  .rl-row:last-child{border-bottom:0;}
+  .rl-row .n{font-weight:600;font-size:14.5px;}
+  .rl-row .d{font-size:11.5px;color:var(--faint);margin-top:2px;}
+
+  .empty{text-align:center;color:var(--faint);padding:46px 20px;font-size:13.5px;line-height:1.7;}
+  .empty .em{font-size:34px;display:block;margin-bottom:10px;opacity:.7;}
+
+  /* sheet / modal */
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .22s;z-index:40;}
+  .scrim.on{opacity:1;pointer-events:auto;}
+  .sheet{
+    position:fixed;left:0;right:0;bottom:0;z-index:50;
+    background:var(--panel);border-top-left-radius:22px;border-top-right-radius:22px;
+    border-top:1px solid var(--line);
+    transform:translateY(110%);transition:transform .26s cubic-bezier(.3,.9,.3,1);
+    max-height:92vh;display:flex;flex-direction:column;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .sheet.on{transform:translateY(0);}
+  .sheet .grab{width:38px;height:4px;border-radius:3px;background:#39414d;margin:9px auto 4px;}
+  .sheet .sh-h{display:flex;align-items:center;justify-content:space-between;padding:6px 18px 12px;border-bottom:1px solid var(--line);}
+  .sheet .sh-h .t{font-size:17px;font-weight:700;}
+  .sheet .sh-h .x{color:var(--dim);font-size:15px;}
+  .sheet .sh-b{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 18px 4px;}
+
+  .seg{display:flex;background:var(--panel2);border-radius:12px;padding:4px;margin-bottom:16px;}
+  .seg button{flex:1;border:0;background:none;color:var(--dim);font-family:inherit;font-size:14px;font-weight:600;
+    padding:9px;border-radius:9px;}
+  .seg button.on{background:var(--gold);color:#1a140a;}
+
+  label.fld{display:block;margin-bottom:14px;}
+  label.fld .lab{font-size:12px;color:var(--dim);letter-spacing:.4px;margin-bottom:6px;display:block;}
+  .inp,select.inp{
+    width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);
+    border-radius:11px;padding:12px 13px;font-size:16px;font-family:inherit;
+    -webkit-appearance:none;appearance:none;user-select:text;-webkit-user-select:text;
+  }
+  .inp.num{font-family:var(--num);}
+  select.inp{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' stroke='%238A94A6' stroke-width='1.6' fill='none' stroke-linecap='round'/></svg>");
+    background-repeat:no-repeat;background-position:right 13px center;padding-right:34px;}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .hint{font-size:11.5px;color:var(--faint);margin:-8px 0 14px;line-height:1.5;}
+  .sug{display:none;margin:-8px 0 14px;background:var(--panel2);border:1px solid var(--line);border-radius:11px;overflow:hidden;max-height:240px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  .sug-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 13px;border-bottom:1px solid var(--line);font-size:14.5px;}
+  .sug-row:last-child{border-bottom:0;}
+  .sug-row:active{background:#222934;}
+  .save{width:100%;background:linear-gradient(160deg,var(--gold),#c89f54);color:#1a140a;border:0;
+    border-radius:13px;padding:15px;font-size:16px;font-weight:700;font-family:inherit;margin:6px 0 16px;}
+  .save:active{opacity:.9;}
+  .ghost{width:100%;background:none;border:1px solid var(--line);color:var(--dim);border-radius:13px;
+    padding:13px;font-size:14px;font-family:inherit;margin-bottom:14px;}
+
+  .badge{font-size:10.5px;color:var(--gold);background:var(--gold-soft);padding:2px 7px;border-radius:6px;margin-left:7px;font-family:var(--num);}
+  .toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 64px);transform:translateX(-50%) translateY(-12px);
+    background:#222a34;border:1px solid var(--line);color:var(--text);padding:10px 16px;border-radius:12px;font-size:13px;
+    opacity:0;pointer-events:none;transition:.25s;z-index:80;white-space:nowrap;}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+  .live-dot{width:7px;height:7px;border-radius:50%;background:var(--down);display:inline-block;margin-right:5px;vertical-align:middle;}
+  .manual-tag{color:var(--gold);}
+  a{color:var(--gold);}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="ttl" id="hTitle">總覽</div>
+    <div class="gear" onclick="openSettings()">⚙︎</div>
+  </header>
+  <main id="view"></main>
+  <nav id="nav">
+    <button data-t="overview" class="on"><span class="ic">◎</span>總覽</button>
+    <button data-t="holdings"><span class="ic">≣</span>持股</button>
+    <button class="addbtn" onclick="openAdd()"><span class="ic">＋</span>新增</button>
+    <button data-t="alloc"><span class="ic">◓</span>佔比</button>
+    <button data-t="realized"><span class="ic">✓</span>已實現</button>
+  </nav>
+</div>
+
+<div class="scrim" id="scrim" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet">
+  <div class="grab"></div>
+  <div class="sh-h"><div class="t" id="shTitle">新增部位</div><div class="x" onclick="closeSheet()">關閉</div></div>
+  <div class="sh-b" id="shBody"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* =========================================================================
+   我的持股 — 台股 / 期貨 投資組合 PWA
+   單位說明：所有「價差損益」「部位」內部一律以「千元」儲存與計算。
+   1 張 = 1000 股；股票 1 元價差 × 1 張 = 1000 元 = 1 千元。
+   ========================================================================= */
+
+const LS_KEY = 'pf_state_v2';
+
+/* 期貨合約類型：multK = 每口、每 1 元(或 1 點)價差對應的「千元」 */
+const CONTRACTS = {
+  stockBig:   {label:'個股期(大,2000股/口)', sharesPerLot:2000, multK:2,    isIdx:false},
+  stockSmall: {label:'小型個股期(100股/口)',  sharesPerLot:100,  multK:0.1,  isIdx:false},
+  idxBig:     {label:'大台指(200元/點)',       sharesPerLot:null, multK:0.2,  isIdx:true},
+  idxSmall:   {label:'小台指(50元/點)',        sharesPerLot:null, multK:0.05, isIdx:true},
+};
+
+/* 常見台股名稱→Yahoo 代號（方便自動帶入，可自行修改） */
+/* 內建（離線）名稱→代號對照，皆已查證。上市=.TW 上櫃=.TWO 指數=^TWII */
+const STATIC_TICKERS = {
+  '台積電':'2330.TW','聯發科':'2454.TW','鴻海':'2317.TW','聯電':'2303.TW','日月光':'3711.TW',
+  '廣達':'2382.TW','國巨':'2327.TW','群創':'3481.TW','南電':'8046.TW','禾伸堂':'3026.TW',
+  '川湖':'2059.TW','文曄':'3036.TW','達發':'6526.TW','穎崴':'6515.TW','漢唐':'2404.TW',
+  '南亞科':'2408.TW','緯創':'3231.TW','陽明':'2609.TW','旺宏':'2337.TW','富采':'3714.TW',
+  '力成':'6239.TW','雙鴻':'3324.TW','勤誠':'8210.TW','中砂':'1560.TW','台光電':'2383.TW',
+  '欣興':'3037.TW','京元電':'2449.TW','矽格':'6257.TW',
+  '旺矽':'6223.TWO','力旺':'3529.TWO','環球晶':'6488.TWO','頎邦':'6147.TWO','中裕':'4147.TWO',
+  '雍智':'6683.TWO','晶呈':'4768.TWO','聯致':'3585.TWO','印能':'7734.TWO','山太士':'3595.TWO',
+  '欣銓':'3264.TWO','晶心科':'6533.TWO',
+  '加權指數':'^TWII','台股指數':'^TWII','大盤':'^TWII',
+};
+
+/* 執行期會再跟證交所/櫃買官方開放資料抓「全表」合併進來（快取 7 天） */
+let NAME_MAP = { ...STATIC_TICKERS };
+let NAME_MAP_LOADED = false;
+function normName(s){ return String(s||'').replace(/\s|＊|\*|－|-?KY$/gi,''); }
+async function ensureNameMap(force){
+  if(NAME_MAP_LOADED && !force) return NAME_MAP;
+  try{
+    const c=JSON.parse(localStorage.getItem('pf_namemap')||'null');
+    if(!force && c && c.t && (Date.now()-c.t < 7*864e5) && c.m){
+      NAME_MAP={...STATIC_TICKERS, ...c.m}; NAME_MAP_LOADED=true; return NAME_MAP;
+    }
+  }catch(e){}
+  const fetched={};
+  // 上市（證交所，含代號 Code 與簡稱 Name）
+  try{
+    const r=await fetch('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL',{cache:'no-store'});
+    if(r.ok){ const a=await r.json();
+      a.forEach(o=>{ const c=o.Code||o.證券代號, n=o.Name||o.證券名稱; if(c&&n) fetched[String(n).trim()]=String(c).trim()+'.TW'; }); }
+  }catch(e){}
+  // 上櫃（櫃買，欄位名容錯）
+  try{
+    const r=await fetch('https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes',{cache:'no-store'});
+    if(r.ok){ const a=await r.json();
+      a.forEach(o=>{ const c=o.SecuritiesCompanyCode||o.Code||o.證券代號||o.代號;
+        const n=o.CompanyName||o.Name||o.SecuritiesCompanyName||o.證券名稱||o.名稱;
+        if(c&&n) fetched[String(n).trim()]=String(c).trim()+'.TWO'; }); }
+  }catch(e){}
+  if(Object.keys(fetched).length){
+    NAME_MAP={...STATIC_TICKERS, ...fetched};
+    try{ localStorage.setItem('pf_namemap',JSON.stringify({t:Date.now(),m:fetched})); }catch(e){}
+  }
+  NAME_MAP_LOADED=true;
+  return NAME_MAP;
+}
+function lookupTicker(name){
+  if(!name) return '';
+  if(NAME_MAP[name]) return NAME_MAP[name];
+  const t=normName(name);
+  for(const k in NAME_MAP){ if(normName(k)===t) return NAME_MAP[k]; }
+  return '';
+}
+function nameCandidates(q){
+  q=(q||'').trim(); if(!q) return [];
+  const isCode=/^\d/.test(q); const out=[]; const seen=new Set();
+  for(const k in NAME_MAP){ const code=NAME_MAP[k];
+    const hit = isCode ? code.startsWith(q) : (k.includes(q) || normName(k).includes(normName(q)));
+    if(hit && !seen.has(code)){ out.push({name:k,ticker:code}); seen.add(code); if(out.length>=8) break; }
+  }
+  return out;
+}
+/* 把匯入/未填代號的部位自動補上代號 */
+async function autofillTickers(force){
+  await ensureNameMap(force);
+  let changed=0;
+  S.positions.forEach(p=>{
+    if(p.kind!=='stock') return;           // 期貨不自動帶現股代號（避免用現股價當期貨價）
+    if(p.ticker && !force) return;
+    const t=lookupTicker(p.name); if(t && p.ticker!==t){ p.ticker=t; changed++; }
+  });
+  if(changed){ save(); render(); toast(`已自動帶入 ${changed} 檔代號`); }
+  return changed;
+}
+
+/* ---------------------------- 狀態 ---------------------------- */
+const SEED_POSITIONS=[
+  {name:"川湖",kind:"stock",ticker:"",buyPrice:1100,manual:7115,buyDate:"2025-06-01",lots:1},
+  {name:"旺矽",kind:"stock",ticker:"",buyPrice:780,manual:6080,buyDate:"2025-06-01",lots:1},
+  {name:"廣達",kind:"stock",ticker:"",buyPrice:270,manual:362,buyDate:"2025-06-01",lots:1},
+  {name:"中裕",kind:"stock",ticker:"",buyPrice:86.8,manual:60.1,buyDate:"2025-06-01",lots:5},
+  {name:"文曄",kind:"stock",ticker:"",buyPrice:129,manual:215.5,buyDate:"2025-06-01",lots:4},
+  {name:"達發",kind:"stock",ticker:"",buyPrice:755,manual:626,buyDate:"2025-06-01",lots:1},
+  {name:"穎崴",kind:"stock",ticker:"",buyPrice:1280,manual:7955,buyDate:"2025-06-01",lots:1},
+  {name:"力旺",kind:"stock",ticker:"",buyPrice:2265,manual:2915,buyDate:"2025-06-01",lots:1},
+  {name:"山太士",kind:"stock",ticker:"",buyPrice:338,manual:2355,buyDate:"2025-06-01",lots:2},
+  {name:"雍智",kind:"stock",ticker:"",buyPrice:715,manual:1660,buyDate:"2025-06-01",lots:1},
+  {name:"晶呈",kind:"stock",ticker:"",buyPrice:492,manual:353.5,buyDate:"2025-06-01",lots:2},
+  {name:"雍智",kind:"stock",ticker:"",buyPrice:888,manual:1660,buyDate:"2025-06-01",lots:3},
+  {name:"環宇",kind:"stock",ticker:"",buyPrice:410.5,manual:490,buyDate:"2025-06-01",lots:2},
+  {name:"禾伸堂",kind:"stock",ticker:"",buyPrice:196,manual:768,buyDate:"2025-06-01",lots:5},
+  {name:"環宇",kind:"stock",ticker:"",buyPrice:624,manual:490,buyDate:"2025-06-01",lots:1},
+  {name:"環球晶",kind:"stock",ticker:"",buyPrice:531,manual:895,buyDate:"2025-06-01",lots:2},
+  {name:"聯致",kind:"stock",ticker:"",buyPrice:68.5,manual:74.1,buyDate:"2025-06-01",lots:2},
+  {name:"聯電期",kind:"futures",ticker:"",buyPrice:143,manual:164.5,buyDate:"2025-06-01",ctype:"stockBig",contracts:15.0,expiry:"2026-07",marginRate:13.5},
+  {name:"聯發科期",kind:"futures",ticker:"",buyPrice:4553.3,manual:3975,buyDate:"2025-06-01",ctype:"stockBig",contracts:3.0,expiry:"2026-07",marginRate:13.5},
+  {name:"印能",kind:"stock",ticker:"",buyPrice:3400,manual:2970,buyDate:"2025-06-01",lots:1},
+  {name:"南電期",kind:"futures",ticker:"",buyPrice:872,manual:1070,buyDate:"2025-06-01",ctype:"stockBig",contracts:4.0,expiry:"2026-07",marginRate:13.5},
+  {name:"日月光期",kind:"futures",ticker:"",buyPrice:607.6,manual:634,buyDate:"2025-06-01",ctype:"stockBig",contracts:5.0,expiry:"2026-07",marginRate:13.5},
+  {name:"頎邦期",kind:"futures",ticker:"",buyPrice:237.93,manual:211,buyDate:"2025-06-01",ctype:"stockBig",contracts:15.0,expiry:"2026-07",marginRate:13.5},
+  {name:"小旺矽期",kind:"futures",ticker:"",buyPrice:6558.5,manual:6150,buyDate:"2025-06-01",ctype:"stockSmall",contracts:10,expiry:"2026-07",marginRate:13.5},
+  {name:"國巨期",kind:"futures",ticker:"",buyPrice:995,manual:1055,buyDate:"2025-06-01",ctype:"stockBig",contracts:4.0,expiry:"2026-07",marginRate:13.5},
+  {name:"群創期",kind:"futures",ticker:"",buyPrice:54.6,manual:68.8,buyDate:"2025-06-01",ctype:"stockBig",contracts:15.0,expiry:"2026-07",marginRate:13.5},
+  {name:"合晶期",kind:"futures",ticker:"",buyPrice:105.5,manual:117.5,buyDate:"2025-06-01",ctype:"stockBig",contracts:20.0,expiry:"2026-07",marginRate:13.5},
+  {name:"精確",kind:"stock",ticker:"",buyPrice:87.5,manual:78.5,buyDate:"2025-06-01",lots:5},
+  {name:"小漢唐期",kind:"futures",ticker:"",buyPrice:1455,manual:1390,buyDate:"2025-06-01",ctype:"stockSmall",contracts:20,expiry:"2026-07",marginRate:13.5},
+  {name:"台燿期",kind:"futures",ticker:"",buyPrice:1930,manual:1545,buyDate:"2025-06-01",ctype:"stockBig",contracts:1.0,expiry:"2026-07",marginRate:13.5},
+  {name:"台指期",kind:"futures",ticker:"",buyPrice:46461,manual:45363,buyDate:"2025-06-01",ctype:"idxBig",contracts:1.0,expiry:"2026-07",marginRate:13.5},
+  {name:"柏承",kind:"stock",ticker:"",buyPrice:39.95,manual:38.95,buyDate:"2025-06-01",lots:5},
+  {name:"環球晶期",kind:"futures",ticker:"",buyPrice:1020,manual:919,buyDate:"2025-06-01",ctype:"stockBig",contracts:2.0,expiry:"2026-07",marginRate:13.5},
+  {name:"台積電期",kind:"futures",ticker:"",buyPrice:2465,manual:2430,buyDate:"2025-06-01",ctype:"stockBig",contracts:1.0,expiry:"2026-08",marginRate:13.5}
+];
+const SEED_REALIZED=[
+  {name:"矽力",kind:"stock",pnlK:32,date:"2025-06-01",costK:403},
+  {name:"矽力",kind:"stock",pnlK:3,date:"2025-06-01",costK:410},
+  {name:"鴻勁",kind:"stock",pnlK:40,date:"2025-06-01",costK:950},
+  {name:"中砂",kind:"stock",pnlK:44,date:"2025-06-01",costK:562},
+  {name:"晶心科",kind:"stock",pnlK:-134.5,date:"2025-06-01",costK:415.5},
+  {name:"勤誠",kind:"stock",pnlK:10,date:"2025-06-01",costK:585.0},
+  {name:"勤誠",kind:"stock",pnlK:10,date:"2025-06-01",costK:287.5},
+  {name:"陽明",kind:"stock",pnlK:28.5,date:"2025-06-01",costK:187.5},
+  {name:"泓德能源",kind:"stock",pnlK:-181,date:"2025-06-01",costK:614},
+  {name:"泓德能源",kind:"stock",pnlK:-71,date:"2025-06-01",costK:504},
+  {name:"台特化",kind:"stock",pnlK:-18.5,date:"2025-06-01",costK:241.5},
+  {name:"環宇",kind:"stock",pnlK:79,date:"2025-06-01",costK:202},
+  {name:"環球晶",kind:"stock",pnlK:-70,date:"2025-06-01",costK:373},
+  {name:"雙鴻",kind:"stock",pnlK:124,date:"2025-06-01",costK:520},
+  {name:"日月光",kind:"stock",pnlK:36,date:"2025-06-01",costK:420},
+  {name:"雙鴻",kind:"stock",pnlK:-55,date:"2025-06-01",costK:711},
+  {name:"雍智",kind:"stock",pnlK:180,date:"2025-06-01",costK:1179},
+  {name:"國巨",kind:"stock",pnlK:13,date:"2025-06-01",costK:543},
+  {name:"欣銓",kind:"stock",pnlK:52,date:"2025-06-01",costK:808.0},
+  {name:"萬潤",kind:"stock",pnlK:-80,date:"2025-06-01",costK:836},
+  {name:"宜鼎",kind:"stock",pnlK:238,date:"2025-06-01",costK:754},
+  {name:"雙鴻",kind:"stock",pnlK:309,date:"2025-06-01",costK:711},
+  {name:"小智邦期",kind:"futures",pnlK:7.59,date:"2025-06-01",costK:31.05},
+  {name:"小智邦期",kind:"futures",pnlK:24,date:"2025-06-01",costK:48.195},
+  {name:"台積電期",kind:"futures",pnlK:380,date:"2025-06-01",costK:418.5},
+  {name:"台光電期",kind:"futures",pnlK:-250,date:"2025-06-01",costK:456.3},
+  {name:"京元電",kind:"stock",pnlK:505.5,date:"2025-06-01",costK:406.5},
+  {name:"台光電期",kind:"futures",pnlK:920,date:"2025-06-01",costK:434.7},
+  {name:"台積電期",kind:"futures",pnlK:250,date:"2025-06-01",costK:473.85},
+  {name:"南亞科期",kind:"futures",pnlK:-51,date:"2025-06-01",costK:220.725},
+  {name:"欣銓",kind:"stock",pnlK:150,date:"2025-06-01",costK:632.5},
+  {name:"力成",kind:"stock",pnlK:135,date:"2025-06-01",costK:625.5},
+  {name:"南亞科期",kind:"futures",pnlK:120,date:"2025-06-01",costK:221.13},
+  {name:"環球晶",kind:"stock",pnlK:-82,date:"2025-06-01",costK:960},
+  {name:"台光電期",kind:"futures",pnlK:1290,date:"2025-06-01",costK:564.3},
+  {name:"台積電期",kind:"futures",pnlK:-50,date:"2025-06-01",costK:511.65},
+  {name:"南電期",kind:"futures",pnlK:936,date:"2025-06-01",costK:332.91},
+  {name:"欣興期",kind:"futures",pnlK:784,date:"2025-06-01",costK:492.48},
+  {name:"矽格期",kind:"futures",pnlK:-100,date:"2025-06-01",costK:191.7},
+  {name:"南電期",kind:"futures",pnlK:324,date:"2025-06-01",costK:461.7},
+  {name:"台光電期",kind:"futures",pnlK:360,date:"2025-06-01",costK:739.8},
+  {name:"台積電期",kind:"futures",pnlK:-80,date:"2025-06-01",costK:507.6},
+  {name:"欣興期",kind:"futures",pnlK:24,date:"2025-06-01",costK:606.96},
+  {name:"旺宏期",kind:"futures",pnlK:35,date:"2025-06-01",costK:180.225},
+  {name:"旺矽",kind:"stock",pnlK:3820,date:"2025-06-01",costK:780},
+  {name:"一銓期",kind:"futures",pnlK:213,date:"2025-06-01",costK:469.8},
+  {name:"台指期",kind:"futures",pnlK:-308.6,date:"2025-06-01",costK:167.0},
+  {name:"易發",kind:"stock",pnlK:170,date:"2025-06-01",costK:1652.0},
+  {name:"日月光期",kind:"futures",pnlK:440,date:"2025-06-01",costK:683.1},
+  {name:"聯電期",kind:"futures",pnlK:453.2,date:"2025-06-01",costK:208.818},
+  {name:"南電期",kind:"futures",pnlK:400,date:"2025-06-01",costK:1152.09},
+  {name:"頎邦期",kind:"futures",pnlK:40,date:"2025-06-01",costK:526.5},
+  {name:"小旺矽期",kind:"futures",pnlK:1038,date:"2025-06-01",costK:848.07},
+  {name:"台積電期",kind:"futures",pnlK:240,date:"2025-06-01",costK:1169.1},
+  {name:"聯發科期",kind:"futures",pnlK:4830,date:"2025-06-01",costK:1158.3},
+  {name:"聯發科期",kind:"futures",pnlK:530,date:"2025-06-01",costK:904.5},
+  {name:"環球晶期",kind:"futures",pnlK:-1318,date:"2025-06-01",costK:1087.02},
+  {name:"台指期",kind:"futures",pnlK:38,date:"2025-06-01",costK:167.0},
+  {name:"台指期",kind:"futures",pnlK:645.6,date:"2025-06-01",costK:334.0},
+  {name:"聯電期",kind:"futures",pnlK:810,date:"2025-06-01",costK:272.7},
+  {name:"日月光期",kind:"futures",pnlK:480,date:"2025-06-01",costK:749.25},
+  {name:"台積電期",kind:"futures",pnlK:250,date:"2025-06-01",costK:606.15},
+  {name:"頎邦期",kind:"futures",pnlK:790,date:"2025-06-01",costK:531.9},
+  {name:"南電期",kind:"futures",pnlK:-336,date:"2025-06-01",costK:1217.16},
+  {name:"小旺矽期",kind:"futures",pnlK:120,date:"2025-06-01",costK:855.9},
+  {name:"聯發科期",kind:"futures",pnlK:2340,date:"2025-06-01",costK:904.5},
+  {name:"聯發科期",kind:"futures",pnlK:3660,date:"2025-06-01",costK:1946.7},
+  {name:"群創期",kind:"futures",pnlK:394.5,date:"2025-06-01",costK:162.607},
+  {name:"合晶期",kind:"futures",pnlK:960,date:"2025-06-01",costK:284.715},
+  {name:"國巨期",kind:"futures",pnlK:2844,date:"2025-06-01",costK:413.1},
+  {name:"富采期",kind:"futures",pnlK:-231.8,date:"2025-06-01",costK:206.82}
+];
+
+let S = load();
+
+function defaults(){
+  return {
+    settings:{ baseK:15000, defMarginRate:13.5, idxMarginBig:167000, idxMarginSmall:41750, workerUrl:'' },
+    positions: SEED_POSITIONS.map(p=>({id:uid(),live:null,...p})),
+    realized:  SEED_REALIZED.map(r=>({id:uid(),...r})),
+    aumHistory:[],
+    seeded:true,
+  };
+}
+function load(){
+  try{ const j=JSON.parse(localStorage.getItem(LS_KEY)); if(j&&j.positions) return j; }catch(e){}
+  return defaults();
+}
+function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(S)); }catch(e){} }
+
+/* ---------------------------- 工具 ---------------------------- */
+function uid(){ return Math.random().toString(36).slice(2,9); }
+function isoDate(d){ return d.toISOString().slice(0,10); }
+function fmtWan(k,dp=1){ // 千元 -> 萬
+  if(k==null||isNaN(k)) return '—';
+  const w=k/10; const s=Math.abs(w)>=1000?w.toFixed(0):w.toFixed(dp);
+  return Number(s).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:dp});
+}
+function fmtNT(k){ // 千元 -> NT$ 元
+  if(k==null||isNaN(k)) return '—';
+  return 'NT$'+Math.round(k*1000).toLocaleString('en-US');
+}
+function sgn(n){ return n>0?'+':''; }
+function clsUD(n){ return n>0?'up':(n<0?'down':''); }
+
+/* 計算單一部位的衍生數值 */
+function calc(p){
+  const buy=Number(p.buyPrice)||0;
+  const cur = (p.live!=null?p.live:(p.manual!=null?p.manual:buy));
+  const usingManual = (p.live==null);
+  let multK, marketK, marginK, retPct, label;
+  if(p.kind==='stock'){
+    const lots=Number(p.lots)||0;
+    multK=lots;                        // 千元 / 1元價差
+    marketK=cur*lots;                  // 市值(千元)=現價×張數×1000/1000
+    marginK=marketK;                   // 現股「部位」= 市值
+    retPct= buy? (cur-buy)/buy*100 : 0;
+    label=`${lots} 張`;
+  }else{
+    const c=CONTRACTS[p.ctype]||CONTRACTS.stockBig;
+    const lots=Number(p.contracts)||0;
+    multK=c.multK*lots;
+    if(c.isIdx){
+      const per = p.ctype==='idxBig'?S.settings.idxMarginBig:S.settings.idxMarginSmall;
+      marginK=(per*lots)/1000;
+      label=`${lots} 口・${p.expiry||''}`;
+    }else{
+      const rate=(Number(p.marginRate)||S.settings.defMarginRate)/100;
+      marginK=(buy*c.sharesPerLot*lots*rate)/1000;
+      label=`${lots} 口・${p.expiry||''}`;
+    }
+    marketK=marginK;                   // 期貨「部位」= 投入保證金
+    const pnlElem=(cur-buy)*multK;     // 千元
+    retPct = marginK? (pnlElem/marginK)*100 : 0;
+  }
+  const pnlK=(cur-buy)*multK;
+  return {cur,buy,pnlK,marketK,marginK,retPct,usingManual,label,multK};
+}
+
+/* 投資組合彙總 */
+function summary(){
+  let stockPosK=0, futPosK=0, unrealK=0;
+  S.positions.forEach(p=>{ const c=calc(p);
+    unrealK+=c.pnlK;
+    if(p.kind==='stock') stockPosK+=c.marketK; else futPosK+=c.marketK;
+  });
+  const realizedK=S.realized.reduce((a,r)=>a+(Number(r.pnlK)||0),0);
+  const aumK=S.settings.baseK+realizedK+unrealK;
+  return {stockPosK,futPosK,unrealK,realizedK,aumK};
+}
+
+/* 依名稱分組（同一支股票不同時間買的合併） */
+function groups(kind){
+  const m={};
+  S.positions.filter(p=>p.kind===kind).forEach(p=>{
+    (m[p.name]=m[p.name]||[]).push(p);
+  });
+  return Object.entries(m).map(([name,arr])=>{
+    let pnlK=0,marketK=0,costBasisK=0;
+    arr.forEach(p=>{ const c=calc(p); pnlK+=c.pnlK; marketK+=c.marketK;
+      // 加權報酬基準：股票用成本市值，期貨用保證金
+      costBasisK += (p.kind==='stock' ? (Number(p.buyPrice)*(Number(p.lots)||0)) : c.marginK);
+    });
+    const retPct = costBasisK? (pnlK/costBasisK)*100 : 0;
+    return {name,arr,pnlK,marketK,retPct};
+  }).sort((a,b)=>b.marketK-a.marketK);
+}
+
+/* ---------------------------- 報價 ---------------------------- */
+async function fetchYahoo(ticker){
+  const url=`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1d`;
+  const proxies=[
+    u=>`https://corsproxy.io/?url=${encodeURIComponent(u)}`,
+    u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+    u=>u,
+  ];
+  for(const px of proxies){
+    try{
+      const r=await fetch(px(url),{cache:'no-store'});
+      if(!r.ok) continue;
+      const j=await r.json();
+      const pr=j?.chart?.result?.[0]?.meta?.regularMarketPrice;
+      if(typeof pr==='number'&&pr>0) return pr;
+    }catch(e){}
+  }
+  return null;
+}
+let refreshing=false;
+async function refreshPrices(){
+  if(refreshing) return; refreshing=true;
+  toast('更新報價中…');
+  let ok=0,fail=0;
+  // 同一代號只抓一次
+  const need=[...new Set(S.positions.filter(p=>p.ticker && p.kind==='stock').map(p=>p.ticker))];
+  const got={};
+  const wurl=(S.settings.workerUrl||'').trim();
+  if(wurl && need.length){
+    // 走自己的 Cloudflare Worker：一次抓全部，最穩定
+    try{
+      const u=wurl+(wurl.includes('?')?'&':'?')+'symbols='+encodeURIComponent(need.join(','));
+      const r=await fetch(u,{cache:'no-store'});
+      if(r.ok){ const j=await r.json(); Object.assign(got,j||{}); }
+    }catch(e){}
+  }
+  // 沒設 Worker、或 Worker 漏掉的代號，用公用 proxy 補抓
+  const remain=need.filter(t=>got[t]==null);
+  await Promise.all(remain.map(async t=>{ const v=await fetchYahoo(t); if(v!=null){got[t]=v;} }));
+  // 最後手段：證交所 OpenAPI（免代理、免設定，但為「前一交易日收盤」）
+  const stillTW=need.filter(t=>got[t]==null && /\.TW$/i.test(t)).map(t=>t.replace(/\.TW$/i,''));
+  if(stillTW.length){
+    try{
+      const r=await fetch('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL',{cache:'no-store'});
+      if(r.ok){ const arr=await r.json(); const m={};
+        arr.forEach(o=>{ const c=o.Code||o.證券代號; const raw=(o.ClosingPrice||o.收盤價||'').toString().replace(/,/g,'');
+          const v=parseFloat(raw); if(c&&v>0) m[String(c).trim()]=v; });
+        need.forEach(t=>{ if(got[t]==null && /\.TW$/i.test(t)){ const c=t.replace(/\.TW$/i,''); if(m[c]!=null) got[t]=m[c]; } });
+      }
+    }catch(e){}
+  }
+  S.positions.forEach(p=>{
+    if(p.kind!=='stock') return;            // 期貨不套用抓到的現股價
+    if(p.ticker&&got[p.ticker]!=null){ p.live=got[p.ticker]; ok++; } else if(p.ticker){ fail++; }
+  });
+  // ---- 期貨：盤後真實收盤價（期交所，需 Worker）----
+  let fok=0;
+  if(wurl){ try{ fok = await fetchFuturesEOD(wurl); ok+=fok; }catch(e){} }
+  snapshotAUM(); save(); render();
+  refreshing=false;
+  if(!need.length && !fok) toast('尚無可抓價的部位（個股填代號、期貨用 Worker 盤後更新）');
+  else toast(fail? `已更新 ${ok} 檔・${fail} 檔需手動` : `報價已更新 ✓`);
+}
+
+/* 期貨盤後真實收盤價：把每檔期貨對到期交所契約，向 Worker 要 ?futures= */
+async function fetchFuturesEOD(wurl){
+  await ensureNameMap().catch(()=>{});
+  const futs=S.positions.filter(p=>p.kind==='futures');
+  if(!futs.length) return 0;
+  const reqs=[]; const keyOf={};
+  futs.forEach(p=>{
+    const ym=(p.expiry||'').replace('-','');           // 2026-07 -> 202607
+    if(ym.length<6) return;
+    let part=null;
+    if(p.ctype==='idxBig'||p.ctype==='idxSmall'){
+      part=`台指:${ym}:${p.ctype==='idxSmall'?'small':'idx'}`;
+    }else{
+      const u=p.name.replace(/^小/,'').replace(/期$/,'');
+      const tk=lookupTicker(u);                          // 旺矽->6223.TWO
+      const code=tk? tk.replace(/\.(TW|TWO)$/i,'') : '';
+      if(!code) return;
+      part=`${code}:${ym}:${p.ctype==='stockSmall'?'small':'big'}`;
+    }
+    keyOf[p.id]=part; if(!reqs.includes(part)) reqs.push(part);
+  });
+  if(!reqs.length) return 0;
+  let matched={};
+  try{
+    const u=wurl+(wurl.includes('?')?'&':'?')+'futures='+encodeURIComponent(reqs.join(','));
+    const r=await fetch(u,{cache:'no-store'});
+    if(r.ok){ const j=await r.json(); matched=j.matched||{}; }
+  }catch(e){ return 0; }
+  let n=0;
+  futs.forEach(p=>{ const k=keyOf[p.id]; if(k && matched[k]!=null){ p.live=matched[k]; n++; } });
+  return n;
+}
+function snapshotAUM(){
+  const d=isoDate(new Date()); const {aumK}=summary();
+  const h=S.aumHistory; const last=h[h.length-1];
+  if(last&&last.date===d) last.aumK=aumK; else h.push({date:d,aumK});
+  if(h.length>400) h.shift();
+}
+
+/* ---------------------------- 畫面 ---------------------------- */
+let tab='overview';
+const VIEW=document.getElementById('view');
+const TITLE={overview:'總覽',holdings:'持股',alloc:'部位佔比',realized:'已實現損益'};
+
+function render(){
+  document.getElementById('hTitle').textContent=TITLE[tab];
+  document.querySelectorAll('#nav button[data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+  ({overview:vOverview,holdings:vHoldings,alloc:vAlloc,realized:vRealized}[tab])();
+}
+
+/* ---- 總覽 ---- */
+function vOverview(){
+  const s=summary();
+  const h=S.aumHistory;
+  let deltaHtml='';
+  if(h.length>=2){
+    const dK=h[h.length-1].aumK-h[0].aumK;
+    deltaHtml=`<div class="delta ${clsUD(dK)}"><span class="num">${sgn(dK)}${fmtWan(dK)} 萬</span>
+      <span style="color:var(--faint)">自 ${h[0].date} 起</span></div>`;
+  }
+  VIEW.innerHTML=`
+    <div class="card hero">
+      <div class="lbl">總資產 AUM</div>
+      <div class="big num">${fmtNT(s.aumK)}</div>
+      <div class="sub num">≈ ${fmtWan(s.aumK,0)} 萬　|　基底 ${fmtWan(S.settings.baseK,0)} 萬 ＋ 已實現 ${sgn(s.realizedK)}${fmtWan(s.realizedK)} ＋ 未實現 ${sgn(s.unrealK)}${fmtWan(s.unrealK)} 萬</div>
+      ${deltaHtml}
+    </div>
+
+    <div class="split">
+      <div class="b"><div class="k">現股部位</div><div class="v num">${fmtWan(s.stockPosK,0)}<small style="font-size:12px;color:var(--dim)"> 萬</small></div>
+        <div class="p num">${pctOf(s.stockPosK,s.stockPosK+s.futPosK)}% 資金</div></div>
+      <div class="b"><div class="k">期貨部位<span class="badge">保證金</span></div><div class="v num">${fmtWan(s.futPosK,0)}<small style="font-size:12px;color:var(--dim)"> 萬</small></div>
+        <div class="p num">${pctOf(s.futPosK,s.stockPosK+s.futPosK)}% 資金</div></div>
+    </div>
+
+    <div class="card">
+      <div class="eyebrow" style="margin-bottom:10px">AUM 變化</div>
+      ${aumChart()}
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><div class="eyebrow">未實現損益</div>
+          <div class="num ${clsUD(s.unrealK)}" style="font-size:24px;font-weight:700;margin-top:4px">${sgn(s.unrealK)}${fmtWan(s.unrealK)} 萬</div></div>
+        <div style="text-align:right"><div class="eyebrow">已實現未分配</div>
+          <div class="num ${clsUD(s.realizedK)}" style="font-size:24px;font-weight:700;margin-top:4px">${sgn(s.realizedK)}${fmtWan(s.realizedK)} 萬</div></div>
+      </div>
+    </div>
+
+    <button class="ghost" onclick="refreshPrices()"><span class="live-dot"></span>更新即時報價</button>
+  `;
+}
+function pctOf(a,b){ return b? (a/b*100).toFixed(0):'0'; }
+
+function aumChart(){
+  const h=S.aumHistory;
+  if(h.length<2) return `<div class="empty" style="padding:24px"><span class="em">📈</span>按「更新即時報價」開始記錄每日 AUM，<br>累積後這裡會顯示走勢圖。</div>`;
+  const W=300,H=120,pad=6;
+  const xs=h.map((_,i)=>i), ys=h.map(d=>d.aumK);
+  const minY=Math.min(...ys),maxY=Math.max(...ys),rng=(maxY-minY)||1;
+  const X=i=>pad+(W-2*pad)*(i/(h.length-1));
+  const Y=v=>H-pad-(H-2*pad)*((v-minY)/rng);
+  let d='';h.forEach((p,i)=>{ d+=(i?'L':'M')+X(i).toFixed(1)+' '+Y(p.aumK).toFixed(1)+' '; });
+  const area=`M${X(0)} ${H-pad} `+h.map((p,i)=>`L${X(i).toFixed(1)} ${Y(p.aumK).toFixed(1)}`).join(' ')+` L${X(h.length-1)} ${H-pad} Z`;
+  const up=ys[ys.length-1]>=ys[0];
+  const col=up?'var(--up)':'var(--down)';
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="none" style="display:block">
+    <defs><linearGradient id="ag" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="${up?'#F6465D':'#21C77A'}" stop-opacity=".25"/>
+      <stop offset="1" stop-color="${up?'#F6465D':'#21C77A'}" stop-opacity="0"/></linearGradient></defs>
+    <path d="${area}" fill="url(#ag)"/>
+    <path d="${d}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${X(h.length-1)}" cy="${Y(ys[ys.length-1])}" r="3.2" fill="${col}"/>
+  </svg>
+  <div style="display:flex;justify-content:space-between;color:var(--faint);font-size:11px;margin-top:6px" class="num">
+    <span>${h[0].date}・${fmtWan(ys[0],0)}萬</span><span>${h[h.length-1].date}・${fmtWan(ys[ys.length-1],0)}萬</span></div>`;
+}
+
+/* ---- 持股 ---- */
+function vHoldings(){
+  const st=groups('stock'), fu=groups('futures');
+  if(!st.length&&!fu.length){
+    VIEW.innerHTML=`<div class="empty"><span class="em">📥</span>還沒有任何部位。<br>點下方 ＋ 新增你的第一筆持股。</div>`;return;
+  }
+  let html='';
+  if(st.length){ html+=secHead('現股',st.reduce((a,g)=>a+g.pnlK,0)); html+=st.map(g=>grpHtml(g,'stock')).join(''); }
+  if(fu.length){ html+=secHead('期貨',fu.reduce((a,g)=>a+g.pnlK,0)); html+=fu.map(g=>grpHtml(g,'futures')).join(''); }
+  VIEW.innerHTML=html;
+}
+function secHead(t,pnlK){
+  return `<div class="sec-h"><div class="t">${t}</div><div class="s ${clsUD(pnlK)}">${sgn(pnlK)}${fmtWan(pnlK)} 萬</div></div>`;
+}
+function grpHtml(g,kind){
+  const multi=g.arr.length>1;
+  const lots=g.arr.map((p,i)=>{
+    const c=calc(p);
+    const tag=c.usingManual?'<span class="manual-tag">手動</span>':(p.kind==='futures'?'<span class="live-dot"></span>盤後':'<span class="live-dot"></span>即時');
+    return `<div class="lot">
+      <div class="l1"><span>${p.buyDate||'—'} 進場</span>
+        <span class="num ${clsUD(c.pnlK)}">${sgn(c.pnlK)}${fmtWan(c.pnlK)} 萬</span></div>
+      <div class="l2"><span class="num">${c.label}　成本 ${c.buy}　現 ${c.cur} ${tag}</span>
+        <span class="num ${clsUD(c.retPct)}">${sgn(c.retPct)}${c.retPct.toFixed(1)}%</span></div>
+      <div class="acts">
+        <button class="sell" onclick="openSell('${p.id}')">賣出</button>
+        <button onclick="openAdd('${p.id}')">編輯</button>
+        <button class="del" onclick="delPos('${p.id}')">刪除</button>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="grp" id="g_${kind}_${cssId(g.name)}">
+    <div class="top" onclick="toggleGrp(this)">
+      <div class="chev">▸</div>
+      <div class="nm"><div class="n">${g.name}${multi?`<span class="badge">${g.arr.length} 筆</span>`:''}</div>
+        <div class="m num">部位 ${fmtWan(g.marketK,0)} 萬</div></div>
+      <div class="rt"><div class="mv num ${clsUD(g.pnlK)}">${sgn(g.pnlK)}${fmtWan(g.pnlK)} 萬</div>
+        <div class="pl">損益</div></div>
+    </div>
+    <div class="body">
+      <div class="ret-row">
+        <div class="l">${multi?'<b>合計報酬率</b>（不分時間）':'<b>報酬率</b>'}</div>
+        <div class="r"><div class="big-ret ${clsUD(g.retPct)}">${sgn(g.retPct)}${g.retPct.toFixed(1)}%</div></div>
+      </div>
+      ${multi?'<div class="ret-row" style="border:0;padding-bottom:4px"><div class="l" style="color:var(--faint)">各筆明細</div></div>':''}
+      ${lots}
+    </div>
+  </div>`;
+}
+function cssId(s){ return s.replace(/[^a-zA-Z0-9]/g,c=>'_'+c.charCodeAt(0)); }
+function toggleGrp(el){ el.parentElement.classList.toggle('open'); }
+
+/* ---- 佔比 ---- */
+const PALETTE=['#E0B66B','#F6465D','#21C77A','#5B8DEF','#C879E0','#E08B5B','#4FC3C7','#B0B7C3','#8E7CFF','#E0C95B'];
+function vAlloc(){
+  // 用「部位」(現股=市值, 期貨=保證金) 合併同名
+  const m={};
+  S.positions.forEach(p=>{ const c=calc(p); m[p.name]=(m[p.name]||0)+c.marketK; });
+  let arr=Object.entries(m).map(([name,v])=>({name,v})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
+  const total=arr.reduce((a,x)=>a+x.v,0);
+  if(!arr.length||total<=0){ VIEW.innerHTML=`<div class="empty"><span class="em">◓</span>尚無部位可計算佔比。</div>`; return; }
+  // donut
+  let acc=0, segs='';
+  const R=54,C=2*Math.PI*R;
+  arr.forEach((x,i)=>{ const frac=x.v/total; const col=PALETTE[i%PALETTE.length];
+    const len=C*frac, off=C*acc;
+    segs+=`<circle cx="70" cy="70" r="${R}" fill="none" stroke="${col}" stroke-width="20"
+      stroke-dasharray="${len.toFixed(2)} ${(C-len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}"
+      transform="rotate(-90 70 70)"/>`; acc+=frac; });
+  const rows=arr.map((x,i)=>{ const col=PALETTE[i%PALETTE.length]; const pc=(x.v/total*100);
+    return `<div><div class="alloc-row">
+      <span class="dot" style="background:${col}"></span>
+      <span class="nm">${x.name}</span>
+      <span class="va num">${fmtWan(x.v,0)} 萬</span>
+      <span class="pc num">${pc.toFixed(1)}%</span></div>
+      <div class="bar"><i style="width:${pc.toFixed(1)}%;background:${col}"></i></div></div>`;
+  }).join('');
+  VIEW.innerHTML=`
+    <div class="card" style="display:flex;align-items:center;gap:18px">
+      <svg viewBox="0 0 140 140" width="128" height="128" style="flex:0 0 auto">${segs}
+        <text x="70" y="66" text-anchor="middle" fill="var(--dim)" font-size="10">總部位</text>
+        <text x="70" y="84" text-anchor="middle" fill="var(--text)" font-size="15" font-weight="700" font-family="var(--num)">${fmtWan(total,0)}萬</text>
+      </svg>
+      <div style="flex:1"><div class="eyebrow">未實現部位佔比</div>
+        <div style="color:var(--faint);font-size:12px;margin-top:8px;line-height:1.6">現股以市值、期貨以投入保證金計算各標的佔總部位的比重。</div></div>
+    </div>
+    <div class="card">${rows}</div>`;
+}
+
+/* ---- 已實現 ---- */
+function vRealized(){
+  const tot=S.realized.reduce((a,r)=>a+(Number(r.pnlK)||0),0);
+  const totCost=S.realized.reduce((a,r)=>a+(Number(r.costK)||0),0);
+  const aggRet= totCost? (tot/totCost*100) : null;
+  const rows=S.realized.length? S.realized.slice().reverse().map(r=>{
+    const ret = (r.costK&&r.costK>0)? (r.pnlK/r.costK*100) : null;
+    const retHtml = ret!=null
+      ? `<span class="pill ${clsUD(ret)} num">${sgn(ret)}${ret.toFixed(1)}%</span>`
+      : `<span class="pill num" style="color:var(--faint)">—</span>`;
+    return `<div class="rl-row">
+      <div><div class="n">${r.name}<span class="badge">${r.kind==='futures'?'期貨':'現股'}</span></div>
+        <div class="d num">${r.date||''}</div></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        ${retHtml}
+        <span class="num ${clsUD(r.pnlK)}" style="font-weight:700;min-width:72px;text-align:right">${sgn(r.pnlK)}${fmtWan(r.pnlK)} 萬</span>
+        <span class="del" style="color:var(--down);font-size:18px" onclick="delReal('${r.id}')">×</span></div>
+    </div>`;
+  }).join('') : `<div class="empty" style="padding:30px"><span class="em">✓</span>還沒有已實現紀錄。</div>`;
+  VIEW.innerHTML=`
+    <div class="card hero" style="padding:18px 16px">
+      <div class="lbl">已實現未分配・合計</div>
+      <div class="big num ${clsUD(tot)}" style="font-size:32px">${sgn(tot)}${fmtWan(tot)} <small>萬</small></div>
+      <div class="sub">此金額計入 AUM${aggRet!=null?`　|　加權報酬率 <b class="num ${clsUD(aggRet)}">${sgn(aggRet)}${aggRet.toFixed(1)}%</b>`:''}</div>
+    </div>
+    <div class="card">${rows}</div>
+    <button class="ghost" onclick="openRealForm()">＋ 新增已實現紀錄</button>`;
+}
+
+/* ---------------------------- 新增 / 編輯 部位 ---------------------------- */
+let formKind='stock', editId=null;
+function openAdd(id){
+  editId=id||null;
+  const p=id? S.positions.find(x=>x.id===id):null;
+  formKind = p? p.kind : 'stock';
+  document.getElementById('shTitle').textContent = p?'編輯部位':'新增部位';
+  renderForm(p);
+  openSheet();
+  ensureNameMap().catch(()=>{}); // 確保候選清單可用
+}
+function renderForm(p){
+  const b=document.getElementById('shBody');
+  const isF=formKind==='futures';
+  const months=monthOptions(p?.expiry);
+  const ctypeOpts=Object.entries(CONTRACTS).map(([k,v])=>`<option value="${k}" ${p?.ctype===k?'selected':''}>${v.label}</option>`).join('');
+  b.innerHTML=`
+    <div class="seg">
+      <button class="${!isF?'on':''}" onclick="setKind('stock')">現股</button>
+      <button class="${isF?'on':''}" onclick="setKind('futures')">期貨</button>
+    </div>
+
+    <label class="fld"><span class="lab">名稱（打字會跳出代號候選，點一下帶入）</span>
+      <input class="inp" id="f_name" placeholder="例：聯發科 或 2454" value="${p?.name||''}" autocomplete="off" oninput="suggestName(this.value)"></label>
+    <div class="sug" id="nm_sug"></div>
+
+    ${isF?`
+      <input type="hidden" id="f_ticker" value="">
+      <div class="hint" style="margin:-2px 0 14px">期貨無法自動抓即時報價（需券商授權），請在下方「期貨現價」手動輸入你看到的期貨價。</div>
+    `:`
+      <label class="fld"><span class="lab">股票代號（Yahoo，例 2330.TW）</span>
+        <input class="inp num" id="f_ticker" placeholder="2330.TW / ^TWII" value="${p?.ticker||''}"></label>
+    `}
+
+    ${isF?`
+      <div class="two">
+        <label class="fld"><span class="lab">口數</span>
+          <input class="inp num" id="f_qty" inputmode="decimal" placeholder="2" value="${p?.contracts??''}"></label>
+        <label class="fld"><span class="lab">到期月份</span>
+          <select class="inp" id="f_exp">${months}</select></label>
+      </div>
+      <label class="fld"><span class="lab">合約類型</span>
+        <select class="inp" id="f_ctype" onchange="onCtype()">${ctypeOpts}</select></label>
+      <label class="fld" id="f_mr_wrap"><span class="lab">保證金比率 %（個股期，抓不到時用預設）</span>
+        <input class="inp num" id="f_mr" inputmode="decimal" placeholder="${S.settings.defMarginRate}" value="${p?.marginRate??''}"></label>
+      <div class="hint">期貨現價會以「標的股價」估算（個股期≈現股價、台指期≈加權指數）。1 口＝2 張。報酬率＝損益 ÷ 投入保證金。</div>
+    `:`
+      <label class="fld"><span class="lab">張數</span>
+        <input class="inp num" id="f_qty" inputmode="decimal" placeholder="1" value="${p?.lots??''}"></label>
+    `}
+
+    <div class="two">
+      <label class="fld"><span class="lab">${isF?'進場價':'成本價'}</span>
+        <input class="inp num" id="f_buy" inputmode="decimal" placeholder="0" value="${p?.buyPrice??''}"></label>
+      <label class="fld"><span class="lab">進場日期</span>
+        <input class="inp num" id="f_date" type="date" value="${p?.buyDate||isoDate(new Date())}"></label>
+    </div>
+
+    <label class="fld"><span class="lab">${isF?'期貨現價（手動輸入你看到的期貨價）':'現價（手動／抓不到報價時的備用值）'}</span>
+      <input class="inp num" id="f_manual" inputmode="decimal" placeholder="可留空" value="${p?.manual??''}"></label>
+
+    <button class="save" onclick="savePos()">${editId?'儲存變更':'新增部位'}</button>
+    ${editId?`<button class="ghost del" style="color:var(--down)" onclick="delPos('${editId}')">刪除這筆部位</button>`:''}
+  `;
+  if(isF) onCtype();
+}
+function setKind(k){ formKind=k; renderForm(editId?S.positions.find(x=>x.id===editId):null); }
+function onCtype(){
+  const t=document.getElementById('f_ctype')?.value;
+  const w=document.getElementById('f_mr_wrap');
+  if(w) w.style.display=(CONTRACTS[t]?.isIdx)?'none':'block';
+}
+function suggestName(q){
+  const box=document.getElementById('nm_sug'); if(!box) return;
+  const list=nameCandidates(q);
+  if(!list.length){ box.style.display='none'; box.innerHTML=''; return; }
+  box.style.display='block';
+  box.innerHTML=list.map(c=>{
+    const nm=c.name.replace(/"/g,'&quot;');
+    return `<div class="sug-row" onclick="pickName(this)" data-n="${nm}" data-t="${c.ticker}">
+      <span>${c.name}</span><span class="num" style="color:var(--dim)">${c.ticker}</span></div>`;
+  }).join('');
+}
+function pickName(el){
+  const nm=el.getAttribute('data-n'), tk=el.getAttribute('data-t');
+  const fn=document.getElementById('f_name'), ft=document.getElementById('f_ticker');
+  if(ft) ft.value=tk;
+  if(fn && (formKind==='stock' || !fn.value)) fn.value=nm;
+  const box=document.getElementById('nm_sug'); if(box){ box.style.display='none'; box.innerHTML=''; }
+}
+function monthOptions(sel){
+  const out=[]; const d=new Date(); d.setDate(1);
+  for(let i=0;i<10;i++){ const y=d.getFullYear(),m=d.getMonth()+1; const v=`${y}-${String(m).padStart(2,'0')}`;
+    out.push(`<option value="${v}" ${sel===v?'selected':''}>${y} 年 ${m} 月</option>`); d.setMonth(d.getMonth()+1);}
+  if(sel&&!out.some(o=>o.includes(`value="${sel}"`))) out.unshift(`<option value="${sel}" selected>${sel}</option>`);
+  return out.join('');
+}
+function savePos(){
+  const g=id=>document.getElementById(id);
+  const name=g('f_name').value.trim();
+  if(!name){ toast('請輸入名稱'); return; }
+  const buy=parseFloat(g('f_buy').value)||0;
+  const base={
+    id:editId||uid(), kind:formKind, name,
+    ticker:g('f_ticker').value.trim(),
+    buyPrice:buy, buyDate:g('f_date').value,
+    manual: g('f_manual').value!==''?parseFloat(g('f_manual').value):null,
+    live: editId?(S.positions.find(x=>x.id===editId)?.live??null):null,
+  };
+  if(formKind==='stock'){ base.lots=parseFloat(g('f_qty').value)||0; }
+  else{
+    base.contracts=parseFloat(g('f_qty').value)||0;
+    base.ctype=g('f_ctype').value;
+    base.expiry=g('f_exp').value;
+    base.marginRate= g('f_mr').value!==''?parseFloat(g('f_mr').value):S.settings.defMarginRate;
+  }
+  if(editId){ const i=S.positions.findIndex(x=>x.id===editId); S.positions[i]=base; }
+  else S.positions.push(base);
+  snapshotAUM(); save(); closeSheet(); tab='holdings'; render(); toast('已儲存 ✓');
+}
+function delPos(id){
+  S.positions=S.positions.filter(p=>p.id!==id);
+  snapshotAUM(); save(); closeSheet(); render(); toast('已刪除');
+}
+
+/* ---- 賣出 / 平倉 → 轉入已實現未分配 ---- */
+function multForQty(p, qty){           // 該數量對應的「千元 / 1元價差」
+  if(p.kind==='stock') return qty;     // 張
+  return (CONTRACTS[p.ctype]||CONTRACTS.stockBig).multK * qty; // 口
+}
+function openSell(id){
+  const p=S.positions.find(x=>x.id===id); if(!p) return;
+  const c=calc(p);
+  const isF=p.kind==='futures';
+  const held = isF ? (Number(p.contracts)||0) : (Number(p.lots)||0);
+  const unit = isF ? '口' : '張';
+  document.getElementById('shTitle').textContent='賣出 / 平倉';
+  document.getElementById('shBody').innerHTML=`
+    <div class="card" style="margin:0 0 14px;background:var(--panel2)">
+      <div style="font-weight:700;font-size:16px">${p.name}<span class="badge">${isF?'期貨':'現股'}</span></div>
+      <div class="num" style="color:var(--dim);font-size:12.5px;margin-top:4px">
+        持有 ${held} ${unit}　成本 ${c.buy}　目前 ${c.cur}</div>
+    </div>
+    <div class="two">
+      <label class="fld"><span class="lab">賣出價</span>
+        <input class="inp num" id="sl_price" inputmode="decimal" value="${c.cur}"></label>
+      <label class="fld"><span class="lab">賣出${unit}數</span>
+        <input class="inp num" id="sl_qty" inputmode="decimal" value="${held}"></label>
+    </div>
+    <label class="fld"><span class="lab">賣出日期</span>
+      <input class="inp num" id="sl_date" type="date" value="${isoDate(new Date())}"></label>
+    <div class="hint" id="sl_preview"></div>
+    <button class="save" onclick="confirmSell('${id}')">確認賣出</button>`;
+  const upd=()=>{
+    const price=parseFloat(document.getElementById('sl_price').value)||0;
+    const qty=parseFloat(document.getElementById('sl_qty').value)||0;
+    const pnlK=(price-c.buy)*multForQty(p,qty);
+    const el=document.getElementById('sl_preview');
+    const cls=pnlK>0?'up':(pnlK<0?'down':'');
+    el.innerHTML=`預計實現損益：<b class="num ${cls}">${sgn(pnlK)}${fmtWan(pnlK)} 萬</b>　`
+      +(qty>=held?'（全部平倉，部位將移除）':`（剩餘 ${(held-qty)} ${unit}）`);
+  };
+  ['sl_price','sl_qty'].forEach(i=>document.getElementById(i).addEventListener('input',upd));
+  upd();
+  openSheet();
+}
+function confirmSell(id){
+  const p=S.positions.find(x=>x.id===id); if(!p) return;
+  const isF=p.kind==='futures';
+  const held = isF ? (Number(p.contracts)||0) : (Number(p.lots)||0);
+  const price=parseFloat(document.getElementById('sl_price').value)||0;
+  let qty=parseFloat(document.getElementById('sl_qty').value)||0;
+  const date=document.getElementById('sl_date').value;
+  if(qty<=0){ toast('請輸入賣出數量'); return; }
+  if(qty>held) qty=held;
+  const buy=Number(p.buyPrice)||0;
+  const pnlK=(price-buy)*multForQty(p,qty);
+  // 投入成本（現股=買價×張；期貨=該口數的保證金）→ 用來算已實現報酬率
+  let costK;
+  if(p.kind==='stock'){ costK=buy*qty; }
+  else{
+    const c=CONTRACTS[p.ctype]||CONTRACTS.stockBig;
+    if(c.isIdx){ const per=p.ctype==='idxBig'?S.settings.idxMarginBig:S.settings.idxMarginSmall; costK=(per*qty)/1000; }
+    else{ const rate=(Number(p.marginRate)||S.settings.defMarginRate)/100; costK=(buy*c.sharesPerLot*qty*rate)/1000; }
+  }
+  // 寫入已實現未分配
+  S.realized.push({id:uid(),name:p.name,kind:p.kind,pnlK:Math.round(pnlK*100)/100,
+    costK:costK>0?Math.round(costK*1000)/1000:undefined,date});
+  // 調整 / 移除部位
+  if(qty>=held){ S.positions=S.positions.filter(x=>x.id!==id); }
+  else if(isF){ p.contracts=held-qty; } else { p.lots=held-qty; }
+  snapshotAUM(); save(); closeSheet(); render();
+  toast(`已賣出，實現 ${sgn(pnlK)}${fmtWan(pnlK)} 萬`);
+}
+
+/* ---- 已實現表單 ---- */
+function openRealForm(){
+  document.getElementById('shTitle').textContent='新增已實現紀錄';
+  document.getElementById('shBody').innerHTML=`
+    <div class="seg"><button class="on" id="rk_s" onclick="rk('stock')">現股</button>
+      <button id="rk_f" onclick="rk('futures')">期貨</button></div>
+    <label class="fld"><span class="lab">名稱</span><input class="inp" id="r_name" placeholder="例：台光電"></label>
+    <label class="fld"><span class="lab">已實現損益（萬）</span><input class="inp num" id="r_pnl" inputmode="decimal" placeholder="例：14.95 或 -6.8"></label>
+    <label class="fld"><span class="lab">投入成本（萬，選填，用來算報酬率）</span><input class="inp num" id="r_cost" inputmode="decimal" placeholder="現股填買進金額／期貨填保證金"></label>
+    <label class="fld"><span class="lab">日期</span><input class="inp num" id="r_date" type="date" value="${isoDate(new Date())}"></label>
+    <div class="hint">金額以「萬」為單位。填了投入成本就會顯示報酬率（＝損益÷成本）；留空則報酬率顯示「—」。此損益計入 AUM。</div>
+    <button class="save" onclick="saveReal()">新增</button>`;
+  openSheet();
+}
+let realKind='stock';
+function rk(k){ realKind=k; document.getElementById('rk_s').classList.toggle('on',k==='stock');
+  document.getElementById('rk_f').classList.toggle('on',k==='futures'); }
+function saveReal(){
+  const n=document.getElementById('r_name').value.trim();
+  const w=parseFloat(document.getElementById('r_pnl').value);
+  const cost=parseFloat(document.getElementById('r_cost').value);
+  if(!n||isNaN(w)){ toast('請填名稱與金額'); return; }
+  const e={id:uid(),name:n,kind:realKind,pnlK:w*10,date:document.getElementById('r_date').value};
+  if(!isNaN(cost)&&cost>0) e.costK=cost*10;
+  S.realized.push(e);
+  snapshotAUM(); save(); closeSheet(); tab='realized'; render(); toast('已新增 ✓');
+}
+function delReal(id){ S.realized=S.realized.filter(r=>r.id!==id); snapshotAUM(); save(); render(); }
+
+/* ---- 設定 ---- */
+function openSettings(){
+  const st=S.settings;
+  document.getElementById('shTitle').textContent='設定';
+  document.getElementById('shBody').innerHTML=`
+    <label class="fld"><span class="lab">AUM 基底（萬）</span>
+      <input class="inp num" id="s_base" inputmode="decimal" value="${st.baseK/10}"></label>
+    <label class="fld"><span class="lab">報價中繼網址（Cloudflare Worker，選填）</span>
+      <input class="inp num" id="s_worker" placeholder="https://xxx.workers.dev" value="${st.workerUrl||''}"></label>
+    <div class="hint">填了之後抓價會走你自己的 Worker，最穩定；留空則用公用代理。</div>
+    <label class="fld"><span class="lab">個股期預設保證金比率 %</span>
+      <input class="inp num" id="s_mr" inputmode="decimal" value="${st.defMarginRate}"></label>
+    <div class="two">
+      <label class="fld"><span class="lab">大台指 保證金/口（元）</span>
+        <input class="inp num" id="s_ib" inputmode="decimal" value="${st.idxMarginBig}"></label>
+      <label class="fld"><span class="lab">小台指 保證金/口（元）</span>
+        <input class="inp num" id="s_is" inputmode="decimal" value="${st.idxMarginSmall}"></label>
+    </div>
+    <div class="hint">台指期保證金請依期交所公告調整。個股期保證金＝進場價×每口股數×口數×比率。</div>
+    <button class="save" onclick="saveSettings()">儲存設定</button>
+    <button class="ghost" onclick="autofillTickers(true)">更新股票清單並重新比對代號</button>
+    <button class="ghost del" style="color:var(--down)" onclick="wipe()">清除所有資料</button>`;
+  openSheet();
+}
+function saveSettings(){
+  const g=id=>parseFloat(document.getElementById(id).value)||0;
+  S.settings.baseK=g('s_base')*10;
+  S.settings.workerUrl=(document.getElementById('s_worker').value||'').trim();
+  S.settings.defMarginRate=g('s_mr');
+  S.settings.idxMarginBig=g('s_ib');
+  S.settings.idxMarginSmall=g('s_is');
+  snapshotAUM(); save(); closeSheet(); render(); toast('設定已儲存 ✓');
+}
+function wipe(){ if(confirm('確定清除全部資料？無法復原。')){ localStorage.removeItem(LS_KEY); S=defaults(); save(); closeSheet(); render(); } }
+
+/* ---- sheet 控制 ---- */
+function openSheet(){ document.getElementById('scrim').classList.add('on'); document.getElementById('sheet').classList.add('on'); }
+function closeSheet(){ document.getElementById('scrim').classList.remove('on'); document.getElementById('sheet').classList.remove('on'); }
+function openAddFn(){ openAdd(); }
+window.openAdd=openAdd;
+
+/* ---- toast ---- */
+let toT;
+function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('on');
+  clearTimeout(toT); toT=setTimeout(()=>t.classList.remove('on'),1900); }
+
+/* ---- 路由 ---- */
+document.querySelectorAll('#nav button[data-t]').forEach(b=>{
+  b.addEventListener('click',()=>{ tab=b.dataset.t; render(); document.getElementById('view').scrollTop=0; });
+});
+
+/* ---- 啟動 ---- */
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+snapshotAUM(); save(); render();
+/* 首次載入嘗試抓報價（失敗就用手動值，不影響使用） */
+setTimeout(()=>{ autofillTickers().catch(()=>{}); }, 400);
+</script>
+</body>
+</html>
