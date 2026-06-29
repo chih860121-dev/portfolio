@@ -599,10 +599,46 @@ async function refreshPrices(){
     if(p.kind!=='stock') return;            // 期貨不套用抓到的現股價
     if(p.ticker&&got[p.ticker]!=null){ p.live=got[p.ticker]; ok++; } else if(p.ticker){ fail++; }
   });
+  // ---- 期貨：盤後真實收盤價（期交所，需 Worker）----
+  let fok=0;
+  if(wurl){ try{ fok = await fetchFuturesEOD(wurl); ok+=fok; }catch(e){} }
   snapshotAUM(); save(); render();
   refreshing=false;
-  if(!need.length) toast('尚無設定代號的部位（在部位裡填代號即可自動抓價）');
+  if(!need.length && !fok) toast('尚無可抓價的部位（個股填代號、期貨用 Worker 盤後更新）');
   else toast(fail? `已更新 ${ok} 檔・${fail} 檔需手動` : `報價已更新 ✓`);
+}
+
+/* 期貨盤後真實收盤價：把每檔期貨對到期交所契約，向 Worker 要 ?futures= */
+async function fetchFuturesEOD(wurl){
+  await ensureNameMap().catch(()=>{});
+  const futs=S.positions.filter(p=>p.kind==='futures');
+  if(!futs.length) return 0;
+  const reqs=[]; const keyOf={};
+  futs.forEach(p=>{
+    const ym=(p.expiry||'').replace('-','');           // 2026-07 -> 202607
+    if(ym.length<6) return;
+    let part=null;
+    if(p.ctype==='idxBig'||p.ctype==='idxSmall'){
+      part=`台指:${ym}:${p.ctype==='idxSmall'?'small':'idx'}`;
+    }else{
+      const u=p.name.replace(/^小/,'').replace(/期$/,'');
+      const tk=lookupTicker(u);                          // 旺矽->6223.TWO
+      const code=tk? tk.replace(/\.(TW|TWO)$/i,'') : '';
+      if(!code) return;
+      part=`${code}:${ym}:${p.ctype==='stockSmall'?'small':'big'}`;
+    }
+    keyOf[p.id]=part; if(!reqs.includes(part)) reqs.push(part);
+  });
+  if(!reqs.length) return 0;
+  let matched={};
+  try{
+    const u=wurl+(wurl.includes('?')?'&':'?')+'futures='+encodeURIComponent(reqs.join(','));
+    const r=await fetch(u,{cache:'no-store'});
+    if(r.ok){ const j=await r.json(); matched=j.matched||{}; }
+  }catch(e){ return 0; }
+  let n=0;
+  futs.forEach(p=>{ const k=keyOf[p.id]; if(k && matched[k]!=null){ p.live=matched[k]; n++; } });
+  return n;
 }
 function snapshotAUM(){
   const d=isoDate(new Date()); const {aumK}=summary();
@@ -708,7 +744,7 @@ function grpHtml(g,kind){
   const multi=g.arr.length>1;
   const lots=g.arr.map((p,i)=>{
     const c=calc(p);
-    const tag=c.usingManual?'<span class="manual-tag">手動</span>':'<span class="live-dot"></span>即時';
+    const tag=c.usingManual?'<span class="manual-tag">手動</span>':(p.kind==='futures'?'<span class="live-dot"></span>盤後':'<span class="live-dot"></span>即時');
     return `<div class="lot">
       <div class="l1"><span>${p.buyDate||'—'} 進場</span>
         <span class="num ${clsUD(c.pnlK)}">${sgn(c.pnlK)}${fmtWan(c.pnlK)} 萬</span></div>
