@@ -143,6 +143,7 @@
     border-radius:10px;padding:8px;font-size:12.5px;font-family:inherit;}
   .acts button:active{background:#222934;}
   .acts button.del{color:var(--down);}
+  .acts button.sell{color:var(--gold);border-color:#3a3320;}
 
   /* allocation */
   .alloc-row{display:flex;align-items:center;gap:12px;padding:11px 2px;}
@@ -306,77 +307,77 @@ const SEED_POSITIONS=[
   {name:"台積電期",kind:"futures",ticker:"",buyPrice:2465,manual:2430,buyDate:"2025-06-01",ctype:"stockBig",contracts:1.0,expiry:"2025-06",marginRate:13.5}
 ];
 const SEED_REALIZED=[
-  {name:"矽力",kind:"stock",pnlK:32,date:"2025-06-01"},
-  {name:"矽力",kind:"stock",pnlK:3,date:"2025-06-01"},
-  {name:"鴻勁",kind:"stock",pnlK:40,date:"2025-06-01"},
-  {name:"中砂",kind:"stock",pnlK:44,date:"2025-06-01"},
-  {name:"晶心科",kind:"stock",pnlK:-134.5,date:"2025-06-01"},
-  {name:"勤誠",kind:"stock",pnlK:10,date:"2025-06-01"},
-  {name:"勤誠",kind:"stock",pnlK:10,date:"2025-06-01"},
-  {name:"陽明",kind:"stock",pnlK:28.5,date:"2025-06-01"},
-  {name:"泓德能源",kind:"stock",pnlK:-181,date:"2025-06-01"},
-  {name:"泓德能源",kind:"stock",pnlK:-71,date:"2025-06-01"},
-  {name:"台特化",kind:"stock",pnlK:-18.5,date:"2025-06-01"},
-  {name:"環宇",kind:"stock",pnlK:79,date:"2025-06-01"},
-  {name:"環球晶",kind:"stock",pnlK:-70,date:"2025-06-01"},
-  {name:"雙鴻",kind:"stock",pnlK:124,date:"2025-06-01"},
-  {name:"日月光",kind:"stock",pnlK:36,date:"2025-06-01"},
-  {name:"雙鴻",kind:"stock",pnlK:-55,date:"2025-06-01"},
-  {name:"雍智",kind:"stock",pnlK:180,date:"2025-06-01"},
-  {name:"國巨",kind:"stock",pnlK:13,date:"2025-06-01"},
-  {name:"欣銓",kind:"stock",pnlK:52,date:"2025-06-01"},
-  {name:"萬潤",kind:"stock",pnlK:-80,date:"2025-06-01"},
-  {name:"宜鼎",kind:"stock",pnlK:238,date:"2025-06-01"},
-  {name:"雙鴻",kind:"stock",pnlK:309,date:"2025-06-01"},
-  {name:"小智邦期",kind:"futures",pnlK:7.59,date:"2025-06-01"},
-  {name:"小智邦期",kind:"futures",pnlK:24,date:"2025-06-01"},
-  {name:"台積電期",kind:"futures",pnlK:380,date:"2025-06-01"},
-  {name:"台光電期",kind:"futures",pnlK:-250,date:"2025-06-01"},
-  {name:"京元電",kind:"stock",pnlK:505.5,date:"2025-06-01"},
-  {name:"台光電期",kind:"futures",pnlK:920,date:"2025-06-01"},
-  {name:"台積電期",kind:"futures",pnlK:250,date:"2025-06-01"},
-  {name:"南亞科期",kind:"futures",pnlK:-51,date:"2025-06-01"},
-  {name:"欣銓",kind:"stock",pnlK:150,date:"2025-06-01"},
-  {name:"力成",kind:"stock",pnlK:135,date:"2025-06-01"},
-  {name:"南亞科期",kind:"futures",pnlK:120,date:"2025-06-01"},
-  {name:"環球晶",kind:"stock",pnlK:-82,date:"2025-06-01"},
-  {name:"台光電期",kind:"futures",pnlK:1290,date:"2025-06-01"},
-  {name:"台積電期",kind:"futures",pnlK:-50,date:"2025-06-01"},
-  {name:"南電期",kind:"futures",pnlK:936,date:"2025-06-01"},
-  {name:"欣興期",kind:"futures",pnlK:784,date:"2025-06-01"},
-  {name:"矽格期",kind:"futures",pnlK:-100,date:"2025-06-01"},
-  {name:"南電期",kind:"futures",pnlK:324,date:"2025-06-01"},
-  {name:"台光電期",kind:"futures",pnlK:360,date:"2025-06-01"},
-  {name:"台積電期",kind:"futures",pnlK:-80,date:"2025-06-01"},
-  {name:"欣興期",kind:"futures",pnlK:24,date:"2025-06-01"},
-  {name:"旺宏期",kind:"futures",pnlK:35,date:"2025-06-01"},
-  {name:"旺矽",kind:"stock",pnlK:3820,date:"2025-06-01"},
-  {name:"一銓期",kind:"futures",pnlK:213,date:"2025-06-01"},
-  {name:"台指期",kind:"futures",pnlK:-308.6,date:"2025-06-01"},
-  {name:"易發",kind:"stock",pnlK:170,date:"2025-06-01"},
-  {name:"日月光期",kind:"futures",pnlK:440,date:"2025-06-01"},
-  {name:"聯電期",kind:"futures",pnlK:453.2,date:"2025-06-01"},
-  {name:"南電期",kind:"futures",pnlK:400,date:"2025-06-01"},
-  {name:"頎邦期",kind:"futures",pnlK:40,date:"2025-06-01"},
-  {name:"小旺矽期",kind:"futures",pnlK:1038,date:"2025-06-01"},
-  {name:"台積電期",kind:"futures",pnlK:240,date:"2025-06-01"},
-  {name:"聯發科期",kind:"futures",pnlK:4830,date:"2025-06-01"},
-  {name:"聯發科期",kind:"futures",pnlK:530,date:"2025-06-01"},
-  {name:"環球晶期",kind:"futures",pnlK:-1318,date:"2025-06-01"},
-  {name:"台指期",kind:"futures",pnlK:38,date:"2025-06-01"},
-  {name:"台指期",kind:"futures",pnlK:645.6,date:"2025-06-01"},
-  {name:"聯電期",kind:"futures",pnlK:810,date:"2025-06-01"},
-  {name:"日月光期",kind:"futures",pnlK:480,date:"2025-06-01"},
-  {name:"台積電期",kind:"futures",pnlK:250,date:"2025-06-01"},
-  {name:"頎邦期",kind:"futures",pnlK:790,date:"2025-06-01"},
-  {name:"南電期",kind:"futures",pnlK:-336,date:"2025-06-01"},
-  {name:"小旺矽期",kind:"futures",pnlK:120,date:"2025-06-01"},
-  {name:"聯發科期",kind:"futures",pnlK:2340,date:"2025-06-01"},
-  {name:"聯發科期",kind:"futures",pnlK:3660,date:"2025-06-01"},
-  {name:"群創期",kind:"futures",pnlK:394.5,date:"2025-06-01"},
-  {name:"合晶期",kind:"futures",pnlK:960,date:"2025-06-01"},
-  {name:"國巨期",kind:"futures",pnlK:2844,date:"2025-06-01"},
-  {name:"富采期",kind:"futures",pnlK:-231.8,date:"2025-06-01"}
+  {name:"矽力",kind:"stock",pnlK:32,date:"2025-06-01",costK:403},
+  {name:"矽力",kind:"stock",pnlK:3,date:"2025-06-01",costK:410},
+  {name:"鴻勁",kind:"stock",pnlK:40,date:"2025-06-01",costK:950},
+  {name:"中砂",kind:"stock",pnlK:44,date:"2025-06-01",costK:562},
+  {name:"晶心科",kind:"stock",pnlK:-134.5,date:"2025-06-01",costK:415.5},
+  {name:"勤誠",kind:"stock",pnlK:10,date:"2025-06-01",costK:585.0},
+  {name:"勤誠",kind:"stock",pnlK:10,date:"2025-06-01",costK:287.5},
+  {name:"陽明",kind:"stock",pnlK:28.5,date:"2025-06-01",costK:187.5},
+  {name:"泓德能源",kind:"stock",pnlK:-181,date:"2025-06-01",costK:614},
+  {name:"泓德能源",kind:"stock",pnlK:-71,date:"2025-06-01",costK:504},
+  {name:"台特化",kind:"stock",pnlK:-18.5,date:"2025-06-01",costK:241.5},
+  {name:"環宇",kind:"stock",pnlK:79,date:"2025-06-01",costK:202},
+  {name:"環球晶",kind:"stock",pnlK:-70,date:"2025-06-01",costK:373},
+  {name:"雙鴻",kind:"stock",pnlK:124,date:"2025-06-01",costK:520},
+  {name:"日月光",kind:"stock",pnlK:36,date:"2025-06-01",costK:420},
+  {name:"雙鴻",kind:"stock",pnlK:-55,date:"2025-06-01",costK:711},
+  {name:"雍智",kind:"stock",pnlK:180,date:"2025-06-01",costK:1179},
+  {name:"國巨",kind:"stock",pnlK:13,date:"2025-06-01",costK:543},
+  {name:"欣銓",kind:"stock",pnlK:52,date:"2025-06-01",costK:808.0},
+  {name:"萬潤",kind:"stock",pnlK:-80,date:"2025-06-01",costK:836},
+  {name:"宜鼎",kind:"stock",pnlK:238,date:"2025-06-01",costK:754},
+  {name:"雙鴻",kind:"stock",pnlK:309,date:"2025-06-01",costK:711},
+  {name:"小智邦期",kind:"futures",pnlK:7.59,date:"2025-06-01",costK:31.05},
+  {name:"小智邦期",kind:"futures",pnlK:24,date:"2025-06-01",costK:48.195},
+  {name:"台積電期",kind:"futures",pnlK:380,date:"2025-06-01",costK:418.5},
+  {name:"台光電期",kind:"futures",pnlK:-250,date:"2025-06-01",costK:456.3},
+  {name:"京元電",kind:"stock",pnlK:505.5,date:"2025-06-01",costK:406.5},
+  {name:"台光電期",kind:"futures",pnlK:920,date:"2025-06-01",costK:434.7},
+  {name:"台積電期",kind:"futures",pnlK:250,date:"2025-06-01",costK:473.85},
+  {name:"南亞科期",kind:"futures",pnlK:-51,date:"2025-06-01",costK:220.725},
+  {name:"欣銓",kind:"stock",pnlK:150,date:"2025-06-01",costK:632.5},
+  {name:"力成",kind:"stock",pnlK:135,date:"2025-06-01",costK:625.5},
+  {name:"南亞科期",kind:"futures",pnlK:120,date:"2025-06-01",costK:221.13},
+  {name:"環球晶",kind:"stock",pnlK:-82,date:"2025-06-01",costK:960},
+  {name:"台光電期",kind:"futures",pnlK:1290,date:"2025-06-01",costK:564.3},
+  {name:"台積電期",kind:"futures",pnlK:-50,date:"2025-06-01",costK:511.65},
+  {name:"南電期",kind:"futures",pnlK:936,date:"2025-06-01",costK:332.91},
+  {name:"欣興期",kind:"futures",pnlK:784,date:"2025-06-01",costK:492.48},
+  {name:"矽格期",kind:"futures",pnlK:-100,date:"2025-06-01",costK:191.7},
+  {name:"南電期",kind:"futures",pnlK:324,date:"2025-06-01",costK:461.7},
+  {name:"台光電期",kind:"futures",pnlK:360,date:"2025-06-01",costK:739.8},
+  {name:"台積電期",kind:"futures",pnlK:-80,date:"2025-06-01",costK:507.6},
+  {name:"欣興期",kind:"futures",pnlK:24,date:"2025-06-01",costK:606.96},
+  {name:"旺宏期",kind:"futures",pnlK:35,date:"2025-06-01",costK:180.225},
+  {name:"旺矽",kind:"stock",pnlK:3820,date:"2025-06-01",costK:780},
+  {name:"一銓期",kind:"futures",pnlK:213,date:"2025-06-01",costK:469.8},
+  {name:"台指期",kind:"futures",pnlK:-308.6,date:"2025-06-01",costK:167.0},
+  {name:"易發",kind:"stock",pnlK:170,date:"2025-06-01",costK:1652.0},
+  {name:"日月光期",kind:"futures",pnlK:440,date:"2025-06-01",costK:683.1},
+  {name:"聯電期",kind:"futures",pnlK:453.2,date:"2025-06-01",costK:208.818},
+  {name:"南電期",kind:"futures",pnlK:400,date:"2025-06-01",costK:1152.09},
+  {name:"頎邦期",kind:"futures",pnlK:40,date:"2025-06-01",costK:526.5},
+  {name:"小旺矽期",kind:"futures",pnlK:1038,date:"2025-06-01",costK:848.07},
+  {name:"台積電期",kind:"futures",pnlK:240,date:"2025-06-01",costK:1169.1},
+  {name:"聯發科期",kind:"futures",pnlK:4830,date:"2025-06-01",costK:1158.3},
+  {name:"聯發科期",kind:"futures",pnlK:530,date:"2025-06-01",costK:904.5},
+  {name:"環球晶期",kind:"futures",pnlK:-1318,date:"2025-06-01",costK:1087.02},
+  {name:"台指期",kind:"futures",pnlK:38,date:"2025-06-01",costK:167.0},
+  {name:"台指期",kind:"futures",pnlK:645.6,date:"2025-06-01",costK:334.0},
+  {name:"聯電期",kind:"futures",pnlK:810,date:"2025-06-01",costK:272.7},
+  {name:"日月光期",kind:"futures",pnlK:480,date:"2025-06-01",costK:749.25},
+  {name:"台積電期",kind:"futures",pnlK:250,date:"2025-06-01",costK:606.15},
+  {name:"頎邦期",kind:"futures",pnlK:790,date:"2025-06-01",costK:531.9},
+  {name:"南電期",kind:"futures",pnlK:-336,date:"2025-06-01",costK:1217.16},
+  {name:"小旺矽期",kind:"futures",pnlK:120,date:"2025-06-01",costK:855.9},
+  {name:"聯發科期",kind:"futures",pnlK:2340,date:"2025-06-01",costK:904.5},
+  {name:"聯發科期",kind:"futures",pnlK:3660,date:"2025-06-01",costK:1946.7},
+  {name:"群創期",kind:"futures",pnlK:394.5,date:"2025-06-01",costK:162.607},
+  {name:"合晶期",kind:"futures",pnlK:960,date:"2025-06-01",costK:284.715},
+  {name:"國巨期",kind:"futures",pnlK:2844,date:"2025-06-01",costK:413.1},
+  {name:"富采期",kind:"futures",pnlK:-231.8,date:"2025-06-01",costK:206.82}
 ];
 
 let S = load();
@@ -513,6 +514,18 @@ async function refreshPrices(){
   // 沒設 Worker、或 Worker 漏掉的代號，用公用 proxy 補抓
   const remain=need.filter(t=>got[t]==null);
   await Promise.all(remain.map(async t=>{ const v=await fetchYahoo(t); if(v!=null){got[t]=v;} }));
+  // 最後手段：證交所 OpenAPI（免代理、免設定，但為「前一交易日收盤」）
+  const stillTW=need.filter(t=>got[t]==null && /\.TW$/i.test(t)).map(t=>t.replace(/\.TW$/i,''));
+  if(stillTW.length){
+    try{
+      const r=await fetch('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL',{cache:'no-store'});
+      if(r.ok){ const arr=await r.json(); const m={};
+        arr.forEach(o=>{ const c=o.Code||o.證券代號; const raw=(o.ClosingPrice||o.收盤價||'').toString().replace(/,/g,'');
+          const v=parseFloat(raw); if(c&&v>0) m[String(c).trim()]=v; });
+        need.forEach(t=>{ if(got[t]==null && /\.TW$/i.test(t)){ const c=t.replace(/\.TW$/i,''); if(m[c]!=null) got[t]=m[c]; } });
+      }
+    }catch(e){}
+  }
   S.positions.forEach(p=>{
     if(p.ticker&&got[p.ticker]!=null){ p.live=got[p.ticker]; ok++; } else if(p.ticker){ fail++; }
   });
@@ -632,6 +645,7 @@ function grpHtml(g,kind){
       <div class="l2"><span class="num">${c.label}　成本 ${c.buy}　現 ${c.cur} ${tag}</span>
         <span class="num ${clsUD(c.retPct)}">${sgn(c.retPct)}${c.retPct.toFixed(1)}%</span></div>
       <div class="acts">
+        <button class="sell" onclick="openSell('${p.id}')">賣出</button>
         <button onclick="openAdd('${p.id}')">編輯</button>
         <button class="del" onclick="delPos('${p.id}')">刪除</button>
       </div>
@@ -698,19 +712,27 @@ function vAlloc(){
 /* ---- 已實現 ---- */
 function vRealized(){
   const tot=S.realized.reduce((a,r)=>a+(Number(r.pnlK)||0),0);
-  const rows=S.realized.length? S.realized.slice().reverse().map(r=>`
-    <div class="rl-row">
+  const totCost=S.realized.reduce((a,r)=>a+(Number(r.costK)||0),0);
+  const aggRet= totCost? (tot/totCost*100) : null;
+  const rows=S.realized.length? S.realized.slice().reverse().map(r=>{
+    const ret = (r.costK&&r.costK>0)? (r.pnlK/r.costK*100) : null;
+    const retHtml = ret!=null
+      ? `<span class="pill ${clsUD(ret)} num">${sgn(ret)}${ret.toFixed(1)}%</span>`
+      : `<span class="pill num" style="color:var(--faint)">—</span>`;
+    return `<div class="rl-row">
       <div><div class="n">${r.name}<span class="badge">${r.kind==='futures'?'期貨':'現股'}</span></div>
         <div class="d num">${r.date||''}</div></div>
-      <div style="display:flex;align-items:center;gap:14px">
-        <span class="num ${clsUD(r.pnlK)}" style="font-weight:700">${sgn(r.pnlK)}${fmtWan(r.pnlK)} 萬</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        ${retHtml}
+        <span class="num ${clsUD(r.pnlK)}" style="font-weight:700;min-width:72px;text-align:right">${sgn(r.pnlK)}${fmtWan(r.pnlK)} 萬</span>
         <span class="del" style="color:var(--down);font-size:18px" onclick="delReal('${r.id}')">×</span></div>
-    </div>`).join('') : `<div class="empty" style="padding:30px"><span class="em">✓</span>還沒有已實現紀錄。</div>`;
+    </div>`;
+  }).join('') : `<div class="empty" style="padding:30px"><span class="em">✓</span>還沒有已實現紀錄。</div>`;
   VIEW.innerHTML=`
     <div class="card hero" style="padding:18px 16px">
       <div class="lbl">已實現未分配・合計</div>
       <div class="big num ${clsUD(tot)}" style="font-size:32px">${sgn(tot)}${fmtWan(tot)} <small>萬</small></div>
-      <div class="sub">此金額計入 AUM</div>
+      <div class="sub">此金額計入 AUM${aggRet!=null?`　|　加權報酬率 <b class="num ${clsUD(aggRet)}">${sgn(aggRet)}${aggRet.toFixed(1)}%</b>`:''}</div>
     </div>
     <div class="card">${rows}</div>
     <button class="ghost" onclick="openRealForm()">＋ 新增已實現紀錄</button>`;
@@ -821,6 +843,76 @@ function delPos(id){
   snapshotAUM(); save(); closeSheet(); render(); toast('已刪除');
 }
 
+/* ---- 賣出 / 平倉 → 轉入已實現未分配 ---- */
+function multForQty(p, qty){           // 該數量對應的「千元 / 1元價差」
+  if(p.kind==='stock') return qty;     // 張
+  return (CONTRACTS[p.ctype]||CONTRACTS.stockBig).multK * qty; // 口
+}
+function openSell(id){
+  const p=S.positions.find(x=>x.id===id); if(!p) return;
+  const c=calc(p);
+  const isF=p.kind==='futures';
+  const held = isF ? (Number(p.contracts)||0) : (Number(p.lots)||0);
+  const unit = isF ? '口' : '張';
+  document.getElementById('shTitle').textContent='賣出 / 平倉';
+  document.getElementById('shBody').innerHTML=`
+    <div class="card" style="margin:0 0 14px;background:var(--panel2)">
+      <div style="font-weight:700;font-size:16px">${p.name}<span class="badge">${isF?'期貨':'現股'}</span></div>
+      <div class="num" style="color:var(--dim);font-size:12.5px;margin-top:4px">
+        持有 ${held} ${unit}　成本 ${c.buy}　目前 ${c.cur}</div>
+    </div>
+    <div class="two">
+      <label class="fld"><span class="lab">賣出價</span>
+        <input class="inp num" id="sl_price" inputmode="decimal" value="${c.cur}"></label>
+      <label class="fld"><span class="lab">賣出${unit}數</span>
+        <input class="inp num" id="sl_qty" inputmode="decimal" value="${held}"></label>
+    </div>
+    <label class="fld"><span class="lab">賣出日期</span>
+      <input class="inp num" id="sl_date" type="date" value="${isoDate(new Date())}"></label>
+    <div class="hint" id="sl_preview"></div>
+    <button class="save" onclick="confirmSell('${id}')">確認賣出</button>`;
+  const upd=()=>{
+    const price=parseFloat(document.getElementById('sl_price').value)||0;
+    const qty=parseFloat(document.getElementById('sl_qty').value)||0;
+    const pnlK=(price-c.buy)*multForQty(p,qty);
+    const el=document.getElementById('sl_preview');
+    const cls=pnlK>0?'up':(pnlK<0?'down':'');
+    el.innerHTML=`預計實現損益：<b class="num ${cls}">${sgn(pnlK)}${fmtWan(pnlK)} 萬</b>　`
+      +(qty>=held?'（全部平倉，部位將移除）':`（剩餘 ${(held-qty)} ${unit}）`);
+  };
+  ['sl_price','sl_qty'].forEach(i=>document.getElementById(i).addEventListener('input',upd));
+  upd();
+  openSheet();
+}
+function confirmSell(id){
+  const p=S.positions.find(x=>x.id===id); if(!p) return;
+  const isF=p.kind==='futures';
+  const held = isF ? (Number(p.contracts)||0) : (Number(p.lots)||0);
+  const price=parseFloat(document.getElementById('sl_price').value)||0;
+  let qty=parseFloat(document.getElementById('sl_qty').value)||0;
+  const date=document.getElementById('sl_date').value;
+  if(qty<=0){ toast('請輸入賣出數量'); return; }
+  if(qty>held) qty=held;
+  const buy=Number(p.buyPrice)||0;
+  const pnlK=(price-buy)*multForQty(p,qty);
+  // 投入成本（現股=買價×張；期貨=該口數的保證金）→ 用來算已實現報酬率
+  let costK;
+  if(p.kind==='stock'){ costK=buy*qty; }
+  else{
+    const c=CONTRACTS[p.ctype]||CONTRACTS.stockBig;
+    if(c.isIdx){ const per=p.ctype==='idxBig'?S.settings.idxMarginBig:S.settings.idxMarginSmall; costK=(per*qty)/1000; }
+    else{ const rate=(Number(p.marginRate)||S.settings.defMarginRate)/100; costK=(buy*c.sharesPerLot*qty*rate)/1000; }
+  }
+  // 寫入已實現未分配
+  S.realized.push({id:uid(),name:p.name,kind:p.kind,pnlK:Math.round(pnlK*100)/100,
+    costK:costK>0?Math.round(costK*1000)/1000:undefined,date});
+  // 調整 / 移除部位
+  if(qty>=held){ S.positions=S.positions.filter(x=>x.id!==id); }
+  else if(isF){ p.contracts=held-qty; } else { p.lots=held-qty; }
+  snapshotAUM(); save(); closeSheet(); render();
+  toast(`已賣出，實現 ${sgn(pnlK)}${fmtWan(pnlK)} 萬`);
+}
+
 /* ---- 已實現表單 ---- */
 function openRealForm(){
   document.getElementById('shTitle').textContent='新增已實現紀錄';
@@ -829,8 +921,9 @@ function openRealForm(){
       <button id="rk_f" onclick="rk('futures')">期貨</button></div>
     <label class="fld"><span class="lab">名稱</span><input class="inp" id="r_name" placeholder="例：台光電"></label>
     <label class="fld"><span class="lab">已實現損益（萬）</span><input class="inp num" id="r_pnl" inputmode="decimal" placeholder="例：14.95 或 -6.8"></label>
+    <label class="fld"><span class="lab">投入成本（萬，選填，用來算報酬率）</span><input class="inp num" id="r_cost" inputmode="decimal" placeholder="現股填買進金額／期貨填保證金"></label>
     <label class="fld"><span class="lab">日期</span><input class="inp num" id="r_date" type="date" value="${isoDate(new Date())}"></label>
-    <div class="hint">輸入「萬」為單位，系統會換算。此金額計入 AUM 的已實現未分配。</div>
+    <div class="hint">金額以「萬」為單位。填了投入成本就會顯示報酬率（＝損益÷成本）；留空則報酬率顯示「—」。此損益計入 AUM。</div>
     <button class="save" onclick="saveReal()">新增</button>`;
   openSheet();
 }
@@ -840,8 +933,11 @@ function rk(k){ realKind=k; document.getElementById('rk_s').classList.toggle('on
 function saveReal(){
   const n=document.getElementById('r_name').value.trim();
   const w=parseFloat(document.getElementById('r_pnl').value);
+  const cost=parseFloat(document.getElementById('r_cost').value);
   if(!n||isNaN(w)){ toast('請填名稱與金額'); return; }
-  S.realized.push({id:uid(),name:n,kind:realKind,pnlK:w*10,date:document.getElementById('r_date').value});
+  const e={id:uid(),name:n,kind:realKind,pnlK:w*10,date:document.getElementById('r_date').value};
+  if(!isNaN(cost)&&cost>0) e.costK=cost*10;
+  S.realized.push(e);
   snapshotAUM(); save(); closeSheet(); tab='realized'; render(); toast('已新增 ✓');
 }
 function delReal(id){ S.realized=S.realized.filter(r=>r.id!==id); snapshotAUM(); save(); render(); }
