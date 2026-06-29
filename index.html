@@ -198,6 +198,10 @@
     background-repeat:no-repeat;background-position:right 13px center;padding-right:34px;}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .hint{font-size:11.5px;color:var(--faint);margin:-8px 0 14px;line-height:1.5;}
+  .sug{display:none;margin:-8px 0 14px;background:var(--panel2);border:1px solid var(--line);border-radius:11px;overflow:hidden;max-height:240px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  .sug-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 13px;border-bottom:1px solid var(--line);font-size:14.5px;}
+  .sug-row:last-child{border-bottom:0;}
+  .sug-row:active{background:#222934;}
   .save{width:100%;background:linear-gradient(160deg,var(--gold),#c89f54);color:#1a140a;border:0;
     border-radius:13px;padding:15px;font-size:16px;font-weight:700;font-family:inherit;margin:6px 0 16px;}
   .save:active{opacity:.9;}
@@ -257,17 +261,86 @@ const CONTRACTS = {
 };
 
 /* 常見台股名稱→Yahoo 代號（方便自動帶入，可自行修改） */
-const TICKERS = {
+/* 內建（離線）名稱→代號對照，皆已查證。上市=.TW 上櫃=.TWO 指數=^TWII */
+const STATIC_TICKERS = {
   '台積電':'2330.TW','聯發科':'2454.TW','鴻海':'2317.TW','聯電':'2303.TW','日月光':'3711.TW',
-  '廣達':'2382.TW','國巨':'2327.TW','群創':'3481.TW','環球晶':'6488.TWO','文曄':'3036.TW',
-  '力旺':'3529.TWO','穎崴':'6515.TWO','川湖':'2059.TW','旺矽':'6223.TWO','達發':'6526.TW',
-  '台光電':'2383.TW','南電':'8046.TW','欣興':'3037.TW','南亞科':'2408.TW','京元電':'2449.TW',
-  '欣銓':'3264.TWO','力成':'6239.TW','雙鴻':'3324.TW','晶心科':'6533.TWO','勤誠':'8210.TW',
-  '中砂':'1560.TW','陽明':'2609.TW','緯創':'3231.TW','禾伸堂':'3026.TW','頎邦':'6147.TWO',
-  '合晶':'6182.TW','富采':'3714.TW','矽格':'6257.TW','旺宏':'2337.TW','一銓':'5009.TW',
-  '聯致':'4938.TW','印能':'7734.TWO','台燿':'6274.TW','柏承':'6141.TWO','精確':'3162.TWO',
-  '加權指數':'^TWII','台股指數':'^TWII',
+  '廣達':'2382.TW','國巨':'2327.TW','群創':'3481.TW','南電':'8046.TW','禾伸堂':'3026.TW',
+  '川湖':'2059.TW','文曄':'3036.TW','達發':'6526.TW','穎崴':'6515.TW','漢唐':'2404.TW',
+  '南亞科':'2408.TW','緯創':'3231.TW','陽明':'2609.TW','旺宏':'2337.TW','富采':'3714.TW',
+  '力成':'6239.TW','雙鴻':'3324.TW','勤誠':'8210.TW','中砂':'1560.TW','台光電':'2383.TW',
+  '欣興':'3037.TW','京元電':'2449.TW','矽格':'6257.TW',
+  '旺矽':'6223.TWO','力旺':'3529.TWO','環球晶':'6488.TWO','頎邦':'6147.TWO','中裕':'4147.TWO',
+  '雍智':'6683.TWO','晶呈':'4768.TWO','聯致':'3585.TWO','印能':'7734.TWO','山太士':'3595.TWO',
+  '欣銓':'3264.TWO','晶心科':'6533.TWO',
+  '加權指數':'^TWII','台股指數':'^TWII','大盤':'^TWII',
 };
+
+/* 執行期會再跟證交所/櫃買官方開放資料抓「全表」合併進來（快取 7 天） */
+let NAME_MAP = { ...STATIC_TICKERS };
+let NAME_MAP_LOADED = false;
+function normName(s){ return String(s||'').replace(/\s|＊|\*|－|-?KY$/gi,''); }
+async function ensureNameMap(force){
+  if(NAME_MAP_LOADED && !force) return NAME_MAP;
+  try{
+    const c=JSON.parse(localStorage.getItem('pf_namemap')||'null');
+    if(!force && c && c.t && (Date.now()-c.t < 7*864e5) && c.m){
+      NAME_MAP={...STATIC_TICKERS, ...c.m}; NAME_MAP_LOADED=true; return NAME_MAP;
+    }
+  }catch(e){}
+  const fetched={};
+  // 上市（證交所，含代號 Code 與簡稱 Name）
+  try{
+    const r=await fetch('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL',{cache:'no-store'});
+    if(r.ok){ const a=await r.json();
+      a.forEach(o=>{ const c=o.Code||o.證券代號, n=o.Name||o.證券名稱; if(c&&n) fetched[String(n).trim()]=String(c).trim()+'.TW'; }); }
+  }catch(e){}
+  // 上櫃（櫃買，欄位名容錯）
+  try{
+    const r=await fetch('https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes',{cache:'no-store'});
+    if(r.ok){ const a=await r.json();
+      a.forEach(o=>{ const c=o.SecuritiesCompanyCode||o.Code||o.證券代號||o.代號;
+        const n=o.CompanyName||o.Name||o.SecuritiesCompanyName||o.證券名稱||o.名稱;
+        if(c&&n) fetched[String(n).trim()]=String(c).trim()+'.TWO'; }); }
+  }catch(e){}
+  if(Object.keys(fetched).length){
+    NAME_MAP={...STATIC_TICKERS, ...fetched};
+    try{ localStorage.setItem('pf_namemap',JSON.stringify({t:Date.now(),m:fetched})); }catch(e){}
+  }
+  NAME_MAP_LOADED=true;
+  return NAME_MAP;
+}
+function lookupTicker(name){
+  if(!name) return '';
+  if(NAME_MAP[name]) return NAME_MAP[name];
+  const t=normName(name);
+  for(const k in NAME_MAP){ if(normName(k)===t) return NAME_MAP[k]; }
+  return '';
+}
+function nameCandidates(q){
+  q=(q||'').trim(); if(!q) return [];
+  const isCode=/^\d/.test(q); const out=[]; const seen=new Set();
+  for(const k in NAME_MAP){ const code=NAME_MAP[k];
+    const hit = isCode ? code.startsWith(q) : (k.includes(q) || normName(k).includes(normName(q)));
+    if(hit && !seen.has(code)){ out.push({name:k,ticker:code}); seen.add(code); if(out.length>=8) break; }
+  }
+  return out;
+}
+/* 把匯入/未填代號的部位自動補上代號 */
+async function autofillTickers(force){
+  await ensureNameMap(force);
+  let changed=0;
+  S.positions.forEach(p=>{
+    if(p.ticker && !force) return;
+    if(p.kind==='stock'){ const t=lookupTicker(p.name); if(t && p.ticker!==t){ p.ticker=t; changed++; } }
+    else{
+      let u=p.name.replace(/^小/,'').replace(/期$/,'');
+      if(u.startsWith('台指')){ if(p.ticker!=='^TWII'){ p.ticker='^TWII'; changed++; } return; }
+      const t=lookupTicker(u); if(t && p.ticker!==t){ p.ticker=t; changed++; }
+    }
+  });
+  if(changed){ save(); render(); toast(`已自動帶入 ${changed} 檔代號`); }
+  return changed;
+}
 
 /* ---------------------------- 狀態 ---------------------------- */
 const SEED_POSITIONS=[
@@ -747,6 +820,7 @@ function openAdd(id){
   document.getElementById('shTitle').textContent = p?'編輯部位':'新增部位';
   renderForm(p);
   openSheet();
+  ensureNameMap().catch(()=>{}); // 確保候選清單可用
 }
 function renderForm(p){
   const b=document.getElementById('shBody');
@@ -759,8 +833,9 @@ function renderForm(p){
       <button class="${isF?'on':''}" onclick="setKind('futures')">期貨</button>
     </div>
 
-    <label class="fld"><span class="lab">名稱</span>
-      <input class="inp" id="f_name" placeholder="例：聯發科" value="${p?.name||''}" oninput="autoTicker()"></label>
+    <label class="fld"><span class="lab">名稱（打字會跳出代號候選，點一下帶入）</span>
+      <input class="inp" id="f_name" placeholder="例：聯發科 或 2454" value="${p?.name||''}" autocomplete="off" oninput="suggestName(this.value)"></label>
+    <div class="sug" id="nm_sug"></div>
 
     <label class="fld"><span class="lab">${isF?'標的股票/指數代號（用來抓現價）':'股票代號（Yahoo，例 2330.TW）'}</span>
       <input class="inp num" id="f_ticker" placeholder="2330.TW / ^TWII" value="${p?.ticker||''}"></label>
@@ -803,10 +878,23 @@ function onCtype(){
   const w=document.getElementById('f_mr_wrap');
   if(w) w.style.display=(CONTRACTS[t]?.isIdx)?'none':'block';
 }
-function autoTicker(){
-  const n=document.getElementById('f_name').value.trim();
-  const tk=document.getElementById('f_ticker');
-  if(tk && !tk.value && TICKERS[n]) tk.value=TICKERS[n];
+function suggestName(q){
+  const box=document.getElementById('nm_sug'); if(!box) return;
+  const list=nameCandidates(q);
+  if(!list.length){ box.style.display='none'; box.innerHTML=''; return; }
+  box.style.display='block';
+  box.innerHTML=list.map(c=>{
+    const nm=c.name.replace(/"/g,'&quot;');
+    return `<div class="sug-row" onclick="pickName(this)" data-n="${nm}" data-t="${c.ticker}">
+      <span>${c.name}</span><span class="num" style="color:var(--dim)">${c.ticker}</span></div>`;
+  }).join('');
+}
+function pickName(el){
+  const nm=el.getAttribute('data-n'), tk=el.getAttribute('data-t');
+  const fn=document.getElementById('f_name'), ft=document.getElementById('f_ticker');
+  if(ft) ft.value=tk;
+  if(fn && (formKind==='stock' || !fn.value)) fn.value=nm;
+  const box=document.getElementById('nm_sug'); if(box){ box.style.display='none'; box.innerHTML=''; }
 }
 function monthOptions(sel){
   const out=[]; const d=new Date(); d.setDate(1);
@@ -962,6 +1050,7 @@ function openSettings(){
     </div>
     <div class="hint">台指期保證金請依期交所公告調整。個股期保證金＝進場價×每口股數×口數×比率。</div>
     <button class="save" onclick="saveSettings()">儲存設定</button>
+    <button class="ghost" onclick="autofillTickers(true)">更新股票清單並重新比對代號</button>
     <button class="ghost del" style="color:var(--down)" onclick="wipe()">清除所有資料</button>`;
   openSheet();
 }
@@ -996,7 +1085,7 @@ document.querySelectorAll('#nav button[data-t]').forEach(b=>{
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
 snapshotAUM(); save(); render();
 /* 首次載入嘗試抓報價（失敗就用手動值，不影響使用） */
-setTimeout(()=>{ refreshPrices().catch(()=>{}); }, 400);
+setTimeout(()=>{ autofillTickers().catch(()=>{}); }, 400);
 </script>
 </body>
 </html>
