@@ -330,13 +330,9 @@ async function autofillTickers(force){
   await ensureNameMap(force);
   let changed=0;
   S.positions.forEach(p=>{
+    if(p.kind!=='stock') return;           // 期貨不自動帶現股代號（避免用現股價當期貨價）
     if(p.ticker && !force) return;
-    if(p.kind==='stock'){ const t=lookupTicker(p.name); if(t && p.ticker!==t){ p.ticker=t; changed++; } }
-    else{
-      let u=p.name.replace(/^小/,'').replace(/期$/,'');
-      if(u.startsWith('台指')){ if(p.ticker!=='^TWII'){ p.ticker='^TWII'; changed++; } return; }
-      const t=lookupTicker(u); if(t && p.ticker!==t){ p.ticker=t; changed++; }
-    }
+    const t=lookupTicker(p.name); if(t && p.ticker!==t){ p.ticker=t; changed++; }
   });
   if(changed){ save(); render(); toast(`已自動帶入 ${changed} 檔代號`); }
   return changed;
@@ -361,23 +357,23 @@ const SEED_POSITIONS=[
   {name:"環宇",kind:"stock",ticker:"",buyPrice:624,manual:490,buyDate:"2025-06-01",lots:1},
   {name:"環球晶",kind:"stock",ticker:"",buyPrice:531,manual:895,buyDate:"2025-06-01",lots:2},
   {name:"聯致",kind:"stock",ticker:"",buyPrice:68.5,manual:74.1,buyDate:"2025-06-01",lots:2},
-  {name:"聯電期",kind:"futures",ticker:"",buyPrice:143,manual:164.5,buyDate:"2025-06-01",ctype:"stockBig",contracts:15.0,expiry:"2025-06",marginRate:13.5},
-  {name:"聯發科期",kind:"futures",ticker:"",buyPrice:4553.3,manual:3975,buyDate:"2025-06-01",ctype:"stockBig",contracts:1.5,expiry:"2025-06",marginRate:13.5},
+  {name:"聯電期",kind:"futures",ticker:"",buyPrice:143,manual:164.5,buyDate:"2025-06-01",ctype:"stockBig",contracts:15.0,expiry:"2026-07",marginRate:13.5},
+  {name:"聯發科期",kind:"futures",ticker:"",buyPrice:4553.3,manual:3975,buyDate:"2025-06-01",ctype:"stockBig",contracts:3.0,expiry:"2026-07",marginRate:13.5},
   {name:"印能",kind:"stock",ticker:"",buyPrice:3400,manual:2970,buyDate:"2025-06-01",lots:1},
-  {name:"南電期",kind:"futures",ticker:"",buyPrice:872,manual:1070,buyDate:"2025-06-01",ctype:"stockBig",contracts:4.0,expiry:"2025-06",marginRate:13.5},
-  {name:"日月光期",kind:"futures",ticker:"",buyPrice:607.6,manual:634,buyDate:"2025-06-01",ctype:"stockBig",contracts:5.0,expiry:"2025-06",marginRate:13.5},
-  {name:"頎邦期",kind:"futures",ticker:"",buyPrice:237.93,manual:211,buyDate:"2025-06-01",ctype:"stockBig",contracts:15.0,expiry:"2025-06",marginRate:13.5},
-  {name:"小旺矽期",kind:"futures",ticker:"",buyPrice:6558.5,manual:6150,buyDate:"2025-06-01",ctype:"stockSmall",contracts:10,expiry:"2025-06",marginRate:13.5},
-  {name:"國巨期",kind:"futures",ticker:"",buyPrice:995,manual:1055,buyDate:"2025-06-01",ctype:"stockBig",contracts:4.0,expiry:"2025-06",marginRate:13.5},
-  {name:"群創期",kind:"futures",ticker:"",buyPrice:54.6,manual:68.8,buyDate:"2025-06-01",ctype:"stockBig",contracts:15.0,expiry:"2025-06",marginRate:13.5},
-  {name:"合晶期",kind:"futures",ticker:"",buyPrice:105.5,manual:117.5,buyDate:"2025-06-01",ctype:"stockBig",contracts:20.0,expiry:"2025-06",marginRate:13.5},
+  {name:"南電期",kind:"futures",ticker:"",buyPrice:872,manual:1070,buyDate:"2025-06-01",ctype:"stockBig",contracts:4.0,expiry:"2026-07",marginRate:13.5},
+  {name:"日月光期",kind:"futures",ticker:"",buyPrice:607.6,manual:634,buyDate:"2025-06-01",ctype:"stockBig",contracts:5.0,expiry:"2026-07",marginRate:13.5},
+  {name:"頎邦期",kind:"futures",ticker:"",buyPrice:237.93,manual:211,buyDate:"2025-06-01",ctype:"stockBig",contracts:15.0,expiry:"2026-07",marginRate:13.5},
+  {name:"小旺矽期",kind:"futures",ticker:"",buyPrice:6558.5,manual:6150,buyDate:"2025-06-01",ctype:"stockSmall",contracts:10,expiry:"2026-07",marginRate:13.5},
+  {name:"國巨期",kind:"futures",ticker:"",buyPrice:995,manual:1055,buyDate:"2025-06-01",ctype:"stockBig",contracts:4.0,expiry:"2026-07",marginRate:13.5},
+  {name:"群創期",kind:"futures",ticker:"",buyPrice:54.6,manual:68.8,buyDate:"2025-06-01",ctype:"stockBig",contracts:15.0,expiry:"2026-07",marginRate:13.5},
+  {name:"合晶期",kind:"futures",ticker:"",buyPrice:105.5,manual:117.5,buyDate:"2025-06-01",ctype:"stockBig",contracts:20.0,expiry:"2026-07",marginRate:13.5},
   {name:"精確",kind:"stock",ticker:"",buyPrice:87.5,manual:78.5,buyDate:"2025-06-01",lots:5},
-  {name:"小漢唐期",kind:"futures",ticker:"",buyPrice:1455,manual:1390,buyDate:"2025-06-01",ctype:"stockSmall",contracts:20,expiry:"2025-06",marginRate:13.5},
-  {name:"台燿期",kind:"futures",ticker:"",buyPrice:1930,manual:1545,buyDate:"2025-06-01",ctype:"stockBig",contracts:1.0,expiry:"2025-06",marginRate:13.5},
-  {name:"台指期",kind:"futures",ticker:"^TWII",buyPrice:46461,manual:45363,buyDate:"2025-06-01",ctype:"idxBig",contracts:1.0,expiry:"2025-06",marginRate:13.5},
+  {name:"小漢唐期",kind:"futures",ticker:"",buyPrice:1455,manual:1390,buyDate:"2025-06-01",ctype:"stockSmall",contracts:20,expiry:"2026-07",marginRate:13.5},
+  {name:"台燿期",kind:"futures",ticker:"",buyPrice:1930,manual:1545,buyDate:"2025-06-01",ctype:"stockBig",contracts:1.0,expiry:"2026-07",marginRate:13.5},
+  {name:"台指期",kind:"futures",ticker:"",buyPrice:46461,manual:45363,buyDate:"2025-06-01",ctype:"idxBig",contracts:1.0,expiry:"2026-07",marginRate:13.5},
   {name:"柏承",kind:"stock",ticker:"",buyPrice:39.95,manual:38.95,buyDate:"2025-06-01",lots:5},
-  {name:"環球晶期",kind:"futures",ticker:"",buyPrice:1020,manual:919,buyDate:"2025-06-01",ctype:"stockBig",contracts:2.0,expiry:"2025-06",marginRate:13.5},
-  {name:"台積電期",kind:"futures",ticker:"",buyPrice:2465,manual:2430,buyDate:"2025-06-01",ctype:"stockBig",contracts:1.0,expiry:"2025-06",marginRate:13.5}
+  {name:"環球晶期",kind:"futures",ticker:"",buyPrice:1020,manual:919,buyDate:"2025-06-01",ctype:"stockBig",contracts:2.0,expiry:"2026-07",marginRate:13.5},
+  {name:"台積電期",kind:"futures",ticker:"",buyPrice:2465,manual:2430,buyDate:"2025-06-01",ctype:"stockBig",contracts:1.0,expiry:"2026-08",marginRate:13.5}
 ];
 const SEED_REALIZED=[
   {name:"矽力",kind:"stock",pnlK:32,date:"2025-06-01",costK:403},
@@ -573,7 +569,7 @@ async function refreshPrices(){
   toast('更新報價中…');
   let ok=0,fail=0;
   // 同一代號只抓一次
-  const need=[...new Set(S.positions.filter(p=>p.ticker).map(p=>p.ticker))];
+  const need=[...new Set(S.positions.filter(p=>p.ticker && p.kind==='stock').map(p=>p.ticker))];
   const got={};
   const wurl=(S.settings.workerUrl||'').trim();
   if(wurl && need.length){
@@ -600,6 +596,7 @@ async function refreshPrices(){
     }catch(e){}
   }
   S.positions.forEach(p=>{
+    if(p.kind!=='stock') return;            // 期貨不套用抓到的現股價
     if(p.ticker&&got[p.ticker]!=null){ p.live=got[p.ticker]; ok++; } else if(p.ticker){ fail++; }
   });
   snapshotAUM(); save(); render();
@@ -837,8 +834,13 @@ function renderForm(p){
       <input class="inp" id="f_name" placeholder="例：聯發科 或 2454" value="${p?.name||''}" autocomplete="off" oninput="suggestName(this.value)"></label>
     <div class="sug" id="nm_sug"></div>
 
-    <label class="fld"><span class="lab">${isF?'標的股票/指數代號（用來抓現價）':'股票代號（Yahoo，例 2330.TW）'}</span>
-      <input class="inp num" id="f_ticker" placeholder="2330.TW / ^TWII" value="${p?.ticker||''}"></label>
+    ${isF?`
+      <input type="hidden" id="f_ticker" value="">
+      <div class="hint" style="margin:-2px 0 14px">期貨無法自動抓即時報價（需券商授權），請在下方「期貨現價」手動輸入你看到的期貨價。</div>
+    `:`
+      <label class="fld"><span class="lab">股票代號（Yahoo，例 2330.TW）</span>
+        <input class="inp num" id="f_ticker" placeholder="2330.TW / ^TWII" value="${p?.ticker||''}"></label>
+    `}
 
     ${isF?`
       <div class="two">
@@ -864,7 +866,7 @@ function renderForm(p){
         <input class="inp num" id="f_date" type="date" value="${p?.buyDate||isoDate(new Date())}"></label>
     </div>
 
-    <label class="fld"><span class="lab">現價（手動／抓不到報價時的備用值）</span>
+    <label class="fld"><span class="lab">${isF?'期貨現價（手動輸入你看到的期貨價）':'現價（手動／抓不到報價時的備用值）'}</span>
       <input class="inp num" id="f_manual" inputmode="decimal" placeholder="可留空" value="${p?.manual??''}"></label>
 
     <button class="save" onclick="savePos()">${editId?'儲存變更':'新增部位'}</button>
