@@ -251,7 +251,7 @@
    ========================================================================= */
 
 const LS_KEY = 'pf_state_v2';
-const APP_VERSION = '2026-07-01 · 現股版';
+const APP_VERSION = '2026-07-01 · 現股+期貨';
 
 /* 期貨合約類型：multK = 每口、每 1 元(或 1 點)價差對應的「千元」 */
 const CONTRACTS = {
@@ -358,9 +358,23 @@ const SEED_POSITIONS=[
   {name:"環宇",kind:"stock",ticker:"",buyPrice:624,manual:490,buyDate:"2025-06-01",lots:1},
   {name:"環球晶",kind:"stock",ticker:"",buyPrice:531,manual:895,buyDate:"2025-06-01",lots:2},
   {name:"聯致",kind:"stock",ticker:"",buyPrice:68.5,manual:74.1,buyDate:"2025-06-01",lots:2},
+  {name:"聯電期",kind:"futures",ticker:"",buyPrice:143,manual:164.5,buyDate:"2025-06-01",ctype:"stockBig",contracts:15.0,expiry:"2026-07",marginRate:13.5},
+  {name:"聯發科期",kind:"futures",ticker:"",buyPrice:4553.3,manual:3975,buyDate:"2025-06-01",ctype:"stockBig",contracts:3.0,expiry:"2026-07",marginRate:13.5},
   {name:"印能",kind:"stock",ticker:"",buyPrice:3400,manual:2970,buyDate:"2025-06-01",lots:1},
+  {name:"南電期",kind:"futures",ticker:"",buyPrice:872,manual:1070,buyDate:"2025-06-01",ctype:"stockBig",contracts:4.0,expiry:"2026-07",marginRate:13.5},
+  {name:"日月光期",kind:"futures",ticker:"",buyPrice:607.6,manual:634,buyDate:"2025-06-01",ctype:"stockBig",contracts:5.0,expiry:"2026-07",marginRate:13.5},
+  {name:"頎邦期",kind:"futures",ticker:"",buyPrice:237.93,manual:211,buyDate:"2025-06-01",ctype:"stockBig",contracts:15.0,expiry:"2026-07",marginRate:13.5},
+  {name:"小旺矽期",kind:"futures",ticker:"",buyPrice:6558.5,manual:6150,buyDate:"2025-06-01",ctype:"stockSmall",contracts:10,expiry:"2026-07",marginRate:13.5},
+  {name:"國巨期",kind:"futures",ticker:"",buyPrice:995,manual:1055,buyDate:"2025-06-01",ctype:"stockBig",contracts:4.0,expiry:"2026-07",marginRate:13.5},
+  {name:"群創期",kind:"futures",ticker:"",buyPrice:54.6,manual:68.8,buyDate:"2025-06-01",ctype:"stockBig",contracts:15.0,expiry:"2026-07",marginRate:13.5},
+  {name:"合晶期",kind:"futures",ticker:"",buyPrice:105.5,manual:117.5,buyDate:"2025-06-01",ctype:"stockBig",contracts:20.0,expiry:"2026-07",marginRate:13.5},
   {name:"精確",kind:"stock",ticker:"",buyPrice:87.5,manual:78.5,buyDate:"2025-06-01",lots:5},
-  {name:"柏承",kind:"stock",ticker:"",buyPrice:39.95,manual:38.95,buyDate:"2025-06-01",lots:5}
+  {name:"小漢唐期",kind:"futures",ticker:"",buyPrice:1455,manual:1390,buyDate:"2025-06-01",ctype:"stockSmall",contracts:20,expiry:"2026-07",marginRate:13.5},
+  {name:"台燿期",kind:"futures",ticker:"",buyPrice:1930,manual:1545,buyDate:"2025-06-01",ctype:"stockBig",contracts:1.0,expiry:"2026-07",marginRate:13.5},
+  {name:"台指期",kind:"futures",ticker:"",buyPrice:46461,manual:45363,buyDate:"2025-06-01",ctype:"idxBig",contracts:1.0,expiry:"2026-07",marginRate:13.5},
+  {name:"柏承",kind:"stock",ticker:"",buyPrice:39.95,manual:38.95,buyDate:"2025-06-01",lots:5},
+  {name:"環球晶期",kind:"futures",ticker:"",buyPrice:1020,manual:919,buyDate:"2025-06-01",ctype:"stockBig",contracts:2.0,expiry:"2026-07",marginRate:13.5},
+  {name:"台積電期",kind:"futures",ticker:"",buyPrice:2465,manual:2430,buyDate:"2025-06-01",ctype:"stockBig",contracts:1.0,expiry:"2026-08",marginRate:13.5}
 ];
 const SEED_REALIZED=[
   {name:"矽力",kind:"stock",pnlK:32,date:"2025-06-01",costK:403},
@@ -558,18 +572,19 @@ async function refreshPrices(){
   // 同一代號只抓一次
   const need=[...new Set(S.positions.filter(p=>p.ticker && p.kind==='stock').map(p=>p.ticker))];
   const got={};
+  const src={};   // 每個代號的來源：'live'(MIS/Yahoo) 或 'eod'(證交所前一日)
   const wurl=(S.settings.workerUrl||'').trim();
   if(wurl && need.length){
     // 走自己的 Cloudflare Worker：一次抓全部，最穩定
     try{
       const u=wurl+(wurl.includes('?')?'&':'?')+'symbols='+encodeURIComponent(need.join(','));
       const r=await fetch(u,{cache:'no-store'});
-      if(r.ok){ const j=await r.json(); Object.assign(got,j||{}); }
+      if(r.ok){ const j=await r.json(); Object.entries(j||{}).forEach(([k,v])=>{ if(v!=null){got[k]=v;src[k]='live';} }); }
     }catch(e){}
   }
   // 沒設 Worker、或 Worker 漏掉的代號，用公用 proxy 補抓
   const remain=need.filter(t=>got[t]==null);
-  await Promise.all(remain.map(async t=>{ const v=await fetchYahoo(t); if(v!=null){got[t]=v;} }));
+  await Promise.all(remain.map(async t=>{ const v=await fetchYahoo(t); if(v!=null){got[t]=v;src[t]='live';} }));
   // 最後手段：證交所 OpenAPI（免代理、免設定，但為「前一交易日收盤」）
   const stillTW=need.filter(t=>got[t]==null && /\.TW$/i.test(t)).map(t=>t.replace(/\.TW$/i,''));
   if(stillTW.length){
@@ -578,17 +593,18 @@ async function refreshPrices(){
       if(r.ok){ const arr=await r.json(); const m={};
         arr.forEach(o=>{ const c=o.Code||o.證券代號; const raw=(o.ClosingPrice||o.收盤價||'').toString().replace(/,/g,'');
           const v=parseFloat(raw); if(c&&v>0) m[String(c).trim()]=v; });
-        need.forEach(t=>{ if(got[t]==null && /\.TW$/i.test(t)){ const c=t.replace(/\.TW$/i,''); if(m[c]!=null) got[t]=m[c]; } });
+        need.forEach(t=>{ if(got[t]==null && /\.TW$/i.test(t)){ const c=t.replace(/\.TW$/i,''); if(m[c]!=null){got[t]=m[c];src[t]='eod';} } });
       }
     }catch(e){}
   }
   S.positions.forEach(p=>{
     if(p.kind!=='stock') return;            // 期貨不套用抓到的現股價
-    if(p.ticker&&got[p.ticker]!=null){ p.live=got[p.ticker]; ok++; } else if(p.ticker){ fail++; }
+    if(p.ticker&&got[p.ticker]!=null){ p.live=got[p.ticker]; p.src=src[p.ticker]||'live'; ok++; } else if(p.ticker){ fail++; }
   });
   // ---- 期貨：盤後真實收盤價（期交所，需 Worker）----
   let fok=0;
   if(wurl){ try{ fok = await fetchFuturesEOD(wurl); ok+=fok; }catch(e){} }
+  S.lastUpdate=Date.now();
   snapshotAUM(); save(); render();
   refreshing=false;
   if(!need.length && !fok) toast('尚無可抓價的部位（個股填代號、期貨用 Worker 盤後更新）');
@@ -624,8 +640,24 @@ async function fetchFuturesEOD(wurl){
     if(r.ok){ const j=await r.json(); matched=j.matched||{}; }
   }catch(e){ return 0; }
   let n=0;
-  futs.forEach(p=>{ const k=keyOf[p.id]; if(k && matched[k]!=null){ p.live=matched[k]; n++; } });
+  futs.forEach(p=>{ const k=keyOf[p.id]; if(k && matched[k]!=null){ p.live=matched[k]; p.src='fut'; n++; } });
   return n;
+}
+/* 台股是否開盤中：平日 09:00–13:30（台北時間） */
+function isMarketOpen(){
+  try{
+    const tw=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Taipei'}));
+    const d=tw.getDay(); if(d===0||d===6) return false;
+    const mins=tw.getHours()*60+tw.getMinutes();
+    return mins>=540 && mins<=810;
+  }catch(e){ return false; }
+}
+/* 誠實標示某部位現價的來源 */
+function priceTag(p){
+  if(p.live==null) return '<span class="manual-tag">手動</span>';
+  if(p.kind==='futures') return '<span class="live-dot"></span>盤後';
+  if(p.src==='eod') return '<span class="manual-tag">昨收</span>';
+  return isMarketOpen() ? '<span class="live-dot"></span>即時' : '<span class="live-dot"></span>收盤';
 }
 function snapshotAUM(){
   const d=isoDate(new Date()); const {aumK}=summary();
@@ -685,6 +717,9 @@ function vOverview(){
     </div>
 
     <button class="ghost" onclick="refreshPrices()"><span class="live-dot"></span>更新即時報價</button>
+    <div class="hint" style="text-align:center;margin-top:-6px">
+      ${isMarketOpen()?'🟢 盤中・現股即時':'⚪ 已收盤・現股顯示收盤價、期貨顯示當日結算'}${S.lastUpdate?'　·　更新於 '+new Date(S.lastUpdate).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):''}
+    </div>
   `;
 }
 function pctOf(a,b){ return b? (a/b*100).toFixed(0):'0'; }
@@ -731,7 +766,7 @@ function grpHtml(g,kind){
   const multi=g.arr.length>1;
   const lots=g.arr.map((p,i)=>{
     const c=calc(p);
-    const tag=c.usingManual?'<span class="manual-tag">手動</span>':(p.kind==='futures'?'<span class="live-dot"></span>盤後':'<span class="live-dot"></span>即時');
+    const tag=priceTag(p);
     return `<div class="lot">
       <div class="l1"><span>${p.buyDate||'—'} 進場</span>
         <span class="num ${clsUD(c.pnlK)}">${sgn(c.pnlK)}${fmtWan(c.pnlK)} 萬</span></div>
