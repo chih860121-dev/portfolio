@@ -251,6 +251,7 @@
    ========================================================================= */
 
 const LS_KEY = 'pf_state_v2';
+const APP_VERSION = '2026-07-01 · 現股版';
 
 /* 期貨合約類型：multK = 每口、每 1 元(或 1 點)價差對應的「千元」 */
 const CONTRACTS = {
@@ -357,23 +358,9 @@ const SEED_POSITIONS=[
   {name:"環宇",kind:"stock",ticker:"",buyPrice:624,manual:490,buyDate:"2025-06-01",lots:1},
   {name:"環球晶",kind:"stock",ticker:"",buyPrice:531,manual:895,buyDate:"2025-06-01",lots:2},
   {name:"聯致",kind:"stock",ticker:"",buyPrice:68.5,manual:74.1,buyDate:"2025-06-01",lots:2},
-  {name:"聯電期",kind:"futures",ticker:"",buyPrice:143,manual:164.5,buyDate:"2025-06-01",ctype:"stockBig",contracts:15.0,expiry:"2026-07",marginRate:13.5},
-  {name:"聯發科期",kind:"futures",ticker:"",buyPrice:4553.3,manual:3975,buyDate:"2025-06-01",ctype:"stockBig",contracts:3.0,expiry:"2026-07",marginRate:13.5},
   {name:"印能",kind:"stock",ticker:"",buyPrice:3400,manual:2970,buyDate:"2025-06-01",lots:1},
-  {name:"南電期",kind:"futures",ticker:"",buyPrice:872,manual:1070,buyDate:"2025-06-01",ctype:"stockBig",contracts:4.0,expiry:"2026-07",marginRate:13.5},
-  {name:"日月光期",kind:"futures",ticker:"",buyPrice:607.6,manual:634,buyDate:"2025-06-01",ctype:"stockBig",contracts:5.0,expiry:"2026-07",marginRate:13.5},
-  {name:"頎邦期",kind:"futures",ticker:"",buyPrice:237.93,manual:211,buyDate:"2025-06-01",ctype:"stockBig",contracts:15.0,expiry:"2026-07",marginRate:13.5},
-  {name:"小旺矽期",kind:"futures",ticker:"",buyPrice:6558.5,manual:6150,buyDate:"2025-06-01",ctype:"stockSmall",contracts:10,expiry:"2026-07",marginRate:13.5},
-  {name:"國巨期",kind:"futures",ticker:"",buyPrice:995,manual:1055,buyDate:"2025-06-01",ctype:"stockBig",contracts:4.0,expiry:"2026-07",marginRate:13.5},
-  {name:"群創期",kind:"futures",ticker:"",buyPrice:54.6,manual:68.8,buyDate:"2025-06-01",ctype:"stockBig",contracts:15.0,expiry:"2026-07",marginRate:13.5},
-  {name:"合晶期",kind:"futures",ticker:"",buyPrice:105.5,manual:117.5,buyDate:"2025-06-01",ctype:"stockBig",contracts:20.0,expiry:"2026-07",marginRate:13.5},
   {name:"精確",kind:"stock",ticker:"",buyPrice:87.5,manual:78.5,buyDate:"2025-06-01",lots:5},
-  {name:"小漢唐期",kind:"futures",ticker:"",buyPrice:1455,manual:1390,buyDate:"2025-06-01",ctype:"stockSmall",contracts:20,expiry:"2026-07",marginRate:13.5},
-  {name:"台燿期",kind:"futures",ticker:"",buyPrice:1930,manual:1545,buyDate:"2025-06-01",ctype:"stockBig",contracts:1.0,expiry:"2026-07",marginRate:13.5},
-  {name:"台指期",kind:"futures",ticker:"",buyPrice:46461,manual:45363,buyDate:"2025-06-01",ctype:"idxBig",contracts:1.0,expiry:"2026-07",marginRate:13.5},
-  {name:"柏承",kind:"stock",ticker:"",buyPrice:39.95,manual:38.95,buyDate:"2025-06-01",lots:5},
-  {name:"環球晶期",kind:"futures",ticker:"",buyPrice:1020,manual:919,buyDate:"2025-06-01",ctype:"stockBig",contracts:2.0,expiry:"2026-07",marginRate:13.5},
-  {name:"台積電期",kind:"futures",ticker:"",buyPrice:2465,manual:2430,buyDate:"2025-06-01",ctype:"stockBig",contracts:1.0,expiry:"2026-08",marginRate:13.5}
+  {name:"柏承",kind:"stock",ticker:"",buyPrice:39.95,manual:38.95,buyDate:"2025-06-01",lots:5}
 ];
 const SEED_REALIZED=[
   {name:"矽力",kind:"stock",pnlK:32,date:"2025-06-01",costK:403},
@@ -946,12 +933,17 @@ function savePos(){
   const name=g('f_name').value.trim();
   if(!name){ toast('請輸入名稱'); return; }
   const buy=parseFloat(g('f_buy').value)||0;
+  const old = editId? S.positions.find(x=>x.id===editId) : null;
+  const newManual = g('f_manual').value!==''?parseFloat(g('f_manual').value):null;
+  // 使用者手動改了現價 -> 清掉即時價，讓手動值立刻生效（下次按更新報價才會再抓）
+  let live = old? (old.live??null) : null;
+  if(newManual!=null && (!old || newManual!==old.manual)) live = null;
   const base={
     id:editId||uid(), kind:formKind, name,
     ticker:g('f_ticker').value.trim(),
     buyPrice:buy, buyDate:g('f_date').value,
-    manual: g('f_manual').value!==''?parseFloat(g('f_manual').value):null,
-    live: editId?(S.positions.find(x=>x.id===editId)?.live??null):null,
+    manual: newManual,
+    live: live,
   };
   if(formKind==='stock'){ base.lots=parseFloat(g('f_qty').value)||0; }
   else{
@@ -1089,8 +1081,19 @@ function openSettings(){
     <div class="hint">台指期保證金請依期交所公告調整。個股期保證金＝進場價×每口股數×口數×比率。</div>
     <button class="save" onclick="saveSettings()">儲存設定</button>
     <button class="ghost" onclick="autofillTickers(true)">更新股票清單並重新比對代號</button>
-    <button class="ghost del" style="color:var(--down)" onclick="wipe()">清除所有資料</button>`;
+    <button class="ghost" onclick="forceUpdate()">強制更新（清除快取、重載最新版）</button>
+    <button class="ghost del" style="color:var(--down)" onclick="wipe()">清除所有資料</button>
+    <div class="hint" style="text-align:center;margin-top:6px">版本 ${APP_VERSION}</div>`;
   openSheet();
+}
+async function forceUpdate(){
+  toast('清除快取中…');
+  try{
+    if('serviceWorker' in navigator){ const rs=await navigator.serviceWorker.getRegistrations(); for(const r of rs){ await r.unregister(); } }
+    if(window.caches){ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); }
+  }catch(e){}
+  // 不動 localStorage，資料保留；只重載最新程式
+  setTimeout(()=>location.reload(true), 300);
 }
 function saveSettings(){
   const g=id=>parseFloat(document.getElementById(id).value)||0;
